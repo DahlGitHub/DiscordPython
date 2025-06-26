@@ -31,6 +31,7 @@ CHAT_URL = os.getenv('chat_url')
 SCRAPFLY_KEY = os.getenv('scrapfly_key')
 RANDOMSTUFF_KEY = os.getenv('randomstuff_key')
 
+GUILDS = [596027534756544514]
 
 """
 Level System
@@ -53,6 +54,8 @@ Color_Bot = 0x7289DA
 Color_Module_Reddit = 0xFF5700
 Color_Module_TimeEdit = 0x138D75
 
+
+Error_Log_Channel_ID = 1386844530262671471  # Replace with your dev/log channel's ID
 
 """
 Emojis

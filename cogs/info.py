@@ -1,14 +1,3 @@
-""""
-Copyright @ DahlGithub
-
-
-Description:
-This is a school project program for a Discord bot made by using an API wrapper for Discord written in Python.
-Discord.py - https://github.com/Rapptz/discord.py
-
-V. 1.0
-"""
-
 import platform
 import time
 
@@ -154,16 +143,6 @@ class Info(commands.Cog):
         
         await ctx.send(embed=embed)
         await ctx.message.delete()
-
-    @commands.command()
-    async def slashsync(self, ctx) -> None:
-        fmt = await ctx.bot.tree.sync()
-        await ctx.send(len(fmt))
-        return
-
-    @app_commands.command(name="hiiiii", description="say hello")
-    async def hello(self, interaction: discord.Interaction):
-        await interaction.response.send_message("Hi there")
 
     @commands.command()
     async def roles(self, ctx):
