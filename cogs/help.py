@@ -1,14 +1,3 @@
-""""
-Copyright @ DahlGithub
-
-
-Description:
-This is a school project program for a Discord bot made by using an API wrapper for Discord written in Python.
-Discord.py - https://github.com/Rapptz/discord.py
-
-V. 1.0
-"""
-
 import discord
 from discord.ext import commands
 

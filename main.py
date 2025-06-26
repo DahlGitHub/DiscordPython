@@ -1,14 +1,3 @@
-""""
-Copyright @ DahlGithub
-
-
-Description:
-This is a school project program for a Discord bot made by using an API wrapper for Discord written in Python.
-Discord.py - https://github.com/Rapptz/discord.py
-
-V. 1.0
-"""
-
 import platform
 import asyncio
 import random
@@ -17,6 +6,7 @@ import os
 import discord
 from discord.ext import commands
 from discord import app_commands
+from utils.embedbuilder import EmbedBuilder
 
 from datetime import datetime
 from dotenv import load_dotenv
@@ -50,7 +40,6 @@ bot.remove_command('help')
 bot.launch_time = datetime.utcnow()
 TOKEN = os.getenv('discord_token')
 
-
 """
 The following functions below are meant to simple run the bot, and load all the extensions.
 
@@ -65,7 +54,6 @@ async def cogs():
         if filename.endswith(".py") and filename != "__init__.py":
             await bot.load_extension(f'cogs.{filename[:-3]}')
             print(filename)
-
 
 @bot.command()
 @commands.is_owner()
@@ -82,41 +70,72 @@ async def uptime(ctx):
 @bot.command(hidden=True)
 @commands.is_owner()
 async def reload(ctx, extensions):
-    """
-    Reloading a specified cog file if code has been updated, whilst the main.py is still running.
-    """
-    await bot.reload_extension(f'cogs.{extensions}')
-    embed = discord.Embed(description=f'**{extensions}** extension has been reloaded.',color=discord.Colour(random.randint(0, 0xFFFFFF)))
-    embed.set_author(name='Control Panel:', icon_url='https://cdn.discordapp.com/attachments/733321378282995743/736183081916170260/settings.png')
-    await ctx.send(embed=embed)
-    await ctx.message.delete()
-
+    extensions = extensions.lower()
+    try:
+        await bot.reload_extension(f'cogs.{extensions}')
+        desc = f'🔄 **{extensions}** extension has been reloaded.'
+        embed = EmbedBuilder(description=desc, color="success", ctx=ctx).author(name="Control Panel:", icon="server").build()
+        await ctx.send(embed=embed)
+        await ctx.message.delete()
+    except commands.ExtensionNotLoaded:
+        embed = EmbedBuilder(description=f"❌ Extension `{extensions}` is not loaded.", color="error", ctx=ctx).author(name="Control Panel:", icon="server").build()
+        await ctx.send(embed=embed)
+    except commands.ExtensionNotFound:
+        embed = EmbedBuilder(description=f"❌ Extension `{extensions}` not found.", color="error", ctx=ctx).author(name="Control Panel:", icon="server").build()
+        await ctx.send(embed=embed)
+    except Exception as e:
+        embed = EmbedBuilder(description=f"❌ Failed to reload extension `{extensions}`:\n{e}", color="error", ctx=ctx).author(name="Control Panel:", icon="server").build()
+        await ctx.send(embed=embed)
 
 @bot.command(hidden=True)
 @commands.is_owner()
 async def load(ctx, extensions):
-    """
-    Loading a specified cog file, if a new file has been added to the cog folder.
-    """
-    await bot.load_extension(f'cogs.{extensions}')
-    embed = discord.Embed(description=f'**{extensions}** extension has been loaded.',color=discord.Colour(random.randint(0, 0xFFFFFF)))
-    embed.set_author(name='Control Panel:', icon_url='https://cdn.discordapp.com/attachments/733321378282995743/736183081916170260/settings.png')
-    await ctx.send(embed=embed)
-    await ctx.message.delete()
-
+    extensions = extensions.lower()
+    try:
+        await bot.load_extension(f'cogs.{extensions}')
+        desc = f'✅ **{extensions}** extension has been loaded.'
+        embed = EmbedBuilder(description=desc, color="success", ctx=ctx).author(name="Control Panel:", icon="server").build()
+        await ctx.send(embed=embed)
+        await ctx.message.delete()
+    except commands.ExtensionAlreadyLoaded:
+        embed = EmbedBuilder(description=f"❌ Extension `{extensions}` is already loaded.", color="warning", ctx=ctx).author(name="Control Panel:", icon="server").build()
+        await ctx.send(embed=embed)
+    except commands.ExtensionNotFound:
+        embed = EmbedBuilder(description=f"❌ Extension `{extensions}` not found.", color="error", ctx=ctx).author(name="Control Panel:", icon="server").build()
+        await ctx.send(embed=embed)
+    except Exception as e:
+        embed = EmbedBuilder(description=f"❌ Failed to load extension `{extensions}`:\n{e}", color="error", ctx=ctx).author(name="Control Panel:", icon="server").build()
+        await ctx.send(embed=embed)
 
 @bot.command(hidden=True)
 @commands.is_owner()
 async def unload(ctx, extensions):
-    """
-    Unloading a specified cog file, incase something should be temporary disabled.
-    """
-    await bot.unload_extension(f'cogs.{extensions}')
-    embed = discord.Embed(description=f'**{extensions}** extension has been unloaded.',color=discord.Colour(random.randint(0, 0xFFFFFF)))
-    embed.set_author(name='Control Panel:', icon_url='https://cdn.discordapp.com/attachments/733321378282995743/736183081916170260/settings.png')
-    await ctx.send(embed=embed)
-    await ctx.message.delete()        
+    extensions = extensions.lower()
+    try:
+        await bot.unload_extension(f'cogs.{extensions}')
+        desc = f'🛑 **{extensions}** extension has been unloaded.'
+        embed = EmbedBuilder(description=desc, color="warning", ctx=ctx).author(name="Control Panel:", icon="server").build()
+        await ctx.send(embed=embed)
+        await ctx.message.delete()
+    except commands.ExtensionNotLoaded:
+        embed = EmbedBuilder(description=f"❌ Extension `{extensions}` is not loaded.", color="error", ctx=ctx).author(name="Control Panel:", icon="server").build()
+        await ctx.send(embed=embed)
+    except Exception as e:
+        embed = EmbedBuilder(description=f"❌ Failed to unload extension `{extensions}`:\n{e}", color="error", ctx=ctx).author(name="Control Panel:", icon="server").build()
+        await ctx.send(embed=embed)
 
+@bot.command(hidden=True)
+@commands.is_owner()
+async def extensions(ctx):
+    loaded = list(bot.extensions.keys())
+    if not loaded:
+        desc = "No extensions currently loaded."
+    else:
+        desc = "\n".join(f"- `{ext}`" for ext in loaded)
+    embed = EmbedBuilder(description=f"**Loaded extensions:**\n{desc}", color="info", ctx=ctx)\
+        .author(name="Control Panel:", icon="server")\
+        .build()
+    await ctx.send(embed=embed)
 
 """
 Printing out status and versions upon start, notifying the owner the program is online.
