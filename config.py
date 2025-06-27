@@ -13,7 +13,8 @@ Tokens, passwords etc.
 """
 # Discord
 DISCORD_TOKEN = os.getenv('discord_token')
-PREFIX = '.'
+# PREFIX = '.'
+PREFIX = '~'
 
 # Reddit
 CLIENT_ID = os.getenv('reddit_id')

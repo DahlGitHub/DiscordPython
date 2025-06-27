@@ -68,7 +68,7 @@ async def uptime(ctx):
 
 
 @bot.command(hidden=True)
-@commands.is_owner()
+# @commands.is_owner()
 async def reload(ctx, extensions):
     extensions = extensions.lower()
     try:
@@ -88,7 +88,7 @@ async def reload(ctx, extensions):
         await ctx.send(embed=embed)
 
 @bot.command(hidden=True)
-@commands.is_owner()
+# @commands.is_owner()
 async def load(ctx, extensions):
     extensions = extensions.lower()
     try:
@@ -108,7 +108,7 @@ async def load(ctx, extensions):
         await ctx.send(embed=embed)
 
 @bot.command(hidden=True)
-@commands.is_owner()
+# @commands.is_owner()
 async def unload(ctx, extensions):
     extensions = extensions.lower()
     try:
@@ -125,7 +125,7 @@ async def unload(ctx, extensions):
         await ctx.send(embed=embed)
 
 @bot.command(hidden=True)
-@commands.is_owner()
+# @commands.is_owner()
 async def extensions(ctx):
     loaded = list(bot.extensions.keys())
     if not loaded:
