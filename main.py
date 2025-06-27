@@ -7,8 +7,9 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from utils.embedbuilder import EmbedBuilder
+from data.database import Database
 
-from datetime import datetime
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 import humanize
 
@@ -36,9 +37,15 @@ bot = commands.Bot(
     intents=discord.Intents.all())
 
 load_dotenv()
-bot.remove_command('help')
-bot.launch_time = datetime.utcnow()
 TOKEN = os.getenv('discord_token')
+
+
+
+db = Database()
+bot.db = db
+
+bot.remove_command('help')
+bot.launch_time = datetime.now(timezone.utc)
 
 """
 The following functions below are meant to simple run the bot, and load all the extensions.
@@ -61,7 +68,7 @@ async def uptime(ctx):
     """
     Status for how long the bot has been online. 
     """
-    uptime = datetime.utcnow() - bot.launch_time
+    uptime = datetime.now(timezone.utc) - bot.launch_time
     embed = discord.Embed(description=f'Ive been awake for **{humanize.precisedelta(uptime, minimum_unit="minutes")}**.',color=0xA62019)
     embed.set_author(name='Uptime:', icon_url='https://cdn.discordapp.com/attachments/733659418486505672/738539741989044295/download_4.png')
     await ctx.send(embed=embed)
@@ -142,11 +149,13 @@ Printing out status and versions upon start, notifying the owner the program is 
 """
 @bot.event
 async def on_ready():
+    
     print(f'Status: {bot.user} is online, {datetime.now()}.')
     print(f"discord.py API version: {discord.__version__}")
     print(f"Python version: {platform.python_version()}")
 
 async def main():
+    await db.connect()
     await cogs()
     await bot.start(TOKEN)
 

@@ -15,6 +15,9 @@ Tokens, passwords etc.
 DISCORD_TOKEN = os.getenv('discord_token')
 PREFIX = '.'
 
+# Database
+DATABASE_URL = os.getenv('database_url')
+
 # Reddit
 CLIENT_ID = os.getenv('reddit_id')
 CLIENT_SECRET = os.getenv('reddit_secret')
@@ -84,3 +87,4 @@ Status_Online = "<:online:737752247127244902>"
 Status_Offline = "<:offline:737752247357931572>"
 Status_Idle = "<:idle:737752265837772842>"
 Status_Dnd = "<:dnd:737752246804021340>"
+
