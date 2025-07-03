@@ -1,6 +1,6 @@
 import discord
-from discord.ext import commands
 from discord import app_commands
+from discord.ext import commands
 from typing import List
 import aiohttp
 import asyncio
@@ -16,14 +16,14 @@ import config
 #     ]
 
 
-class Olav(commands.Cog):
+class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms)"):
     """
     Testcums commands, general configuration for the bot. 
     """
 
     def __init__(self, bot):
         self.bot = bot
-        self.LOL_RANK_TYPEs = {
+        self.LOL_RANK_TYPE = {
             "RANKED_SOLO_SR": "Ranked Solo/Duo",
             "RANKED_FLEX_SR": "Ranked Flex",
             "RANKED_TFT": "Ranked TFT",
@@ -39,7 +39,7 @@ class Olav(commands.Cog):
         roles = [role for role in ctx.guild.roles[1:]]
 
         embed = discord.Embed(description="   ".join([role.mention for role in roles]),
-                              colour=discord.Colour(config.Color_Bot))
+                              colour=discord.Colour(config.Color_Default))
         embed.set_author(name=f"{ctx.guild} Roles ({len(ctx.guild.roles) - 1})", icon_url=ctx.guild.icon.url)
         await ctx.send(embed=embed)
         await ctx.message.delete()
@@ -50,7 +50,7 @@ class Olav(commands.Cog):
         Returns the best game ever.
         """
         msg = "Path of Exile is the best game ever, according to the developer of this bot."
-        embed = discord.Embed(description=msg, colour=discord.Colour(config.Color_Bot))
+        embed = discord.Embed(description=msg, colour=discord.Colour(config.Color_Default))
         embed.set_author(name=f"{ctx.guild}: Best Game", icon_url=ctx.guild.icon.url)
         await ctx.send(embed=embed)
         await ctx.message.delete()
@@ -141,7 +141,7 @@ class Olav(commands.Cog):
             if response:
                 embed = discord.Embed(
                     description=f"✅ Fetched data from `{table}` database:\n{response}",
-                    color=discord.Colour(config.Color_Bot)
+                    color=discord.Colour(config.Color_Default)
                 )
             else:
                 embed = discord.Embed(
@@ -170,11 +170,12 @@ class Olav(commands.Cog):
     # @app_commands.command(name='my_lol_account', description='Get your lol account information')
     # @app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in config.GUILDS])
     # async def my_account(self, interaction: discord.Interaction, username: str, tag: str):
-    @commands.command()
+    @commands.command(name='my_account', description='Get your League of Legends account information')
     async def my_account(self, ctx, username: str, tag: str):
         """
         Get your account information.
         """
+        print(f"https://{config.RIOT_API_REGION}/riot/account/v1/accounts/by-riot-id/{username}/{tag}?api_key={config.RIOT_API_KEY}")
         async with aiohttp.ClientSession() as session:
             url = f"https://{config.RIOT_API_REGION}/riot/account/v1/accounts/by-riot-id/{username}/{tag}"
             headers = {"X-Riot-Token": config.RIOT_API_KEY}
@@ -182,18 +183,18 @@ class Olav(commands.Cog):
                 response = await session.get(url, headers=headers)
                 if response.status == 200:
                     data = await response.json()
-                    print(f"Response data: {data}")
+                    # print(f"Response data: {data}")
                 else:
-                    print(f"Failed to fetch data. Status code: {response.status}")
+                    print(f"Failed to fetch data. Status code: {response.status}, Response: {await response.text()}, URL: {url}")
 
             except aiohttp.ClientError as e:
                 print(f"ClientError occurred: {e}")
 
             puuid = data['puuid']
-            print(f"Fetching account information for {username}#{tag}... puuid:{puuid}")
+            # print(f"Fetching account information for {username}#{tag}... puuid:{puuid}")
 
             dbquery = "SELECT puuid FROM riot_accounts WHERE username = $1 AND tag = $2"
-            dbresult = await self.bot.db.fetchrow(dbquery, username, tag)
+            dbresult = await self.bot.db.fetchrow(dbquery, username.lower(), tag.lower())
             if dbresult:
                 puuid = dbresult['puuid']
             else:
@@ -214,7 +215,7 @@ class Olav(commands.Cog):
                     data = await response.json()
                     print(f"Response data for account info: {data}")
                 else:
-                    print(f"Failed to fetch ranked information. Status code: {response.status}")
+                    print(f"Failed to fetch ranked information. Status code: {response.status}, Response: {await response.text()}, URL: {url} ")
                     await ctx.send(
                         f"❌ Failed to fetch ranked information for `{username}#{tag}`. Please check the username and tag."
                     )
@@ -229,13 +230,12 @@ class Olav(commands.Cog):
             embed = discord.Embed(
                 title=f"{username}'s Account Information",
                 description=f"{username}#{tag} has {data[0]['wins']} wins and {data[0]['losses']} losses in {self.LOL_RANK_TYPE[data[0]['queueType']]}.",
-                color=discord.Colour(config.Color_Bot)
+                color=discord.Colour(config.Color_Default)
             )
             await ctx.send(embed=embed)
 
     # @commands.command(name='save_lol_account', description='Save your League of Legends account information')
     @app_commands.command(name='save_lol_account', description='Save your League of Legends account information')
-    @app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in config.GUILDS])
     @app_commands.describe(username='Your League of Legends username', tag='Your League of Legends tag')
     async def save_lol_account(self, interaction: discord.Interaction, username: str, tag: str):
         """
@@ -258,14 +258,14 @@ class Olav(commands.Cog):
 
             print("Starting db insertion for account information...")
             try:
-                dbquery = "INSERT INTO riot_accounts (username, tag, puuid, region) VALUES ($1, $2, $3, $4) ON CONFLICT (puuid) DO UPDATE SET username = $1, tag = $2, last_updated = NOW()"
+                dbquery = "INSERT INTO riot_accounts (username, tag, puuid, region) VALUES ($1, $2, $3, $4) ON CONFLICT (puuid) DO UPDATE SET username = $1, tag = $2, puuid = $3, last_updated = NOW()"
                 dbresponse = await self.bot.db.execute(dbquery, username.lower(), tag.lower(), puuid, "euw")
                 if dbresponse:
                     print(f"Database response: {dbresponse}")
 
                     embed = discord.Embed(
                         description=f"✅ Your League of Legends account `{username}#{tag}` has been saved successfully.",
-                        color=discord.Colour(config.Color_Bot)
+                        color=discord.Colour(config.Color_Default)
                     )
                     embed.set_author(name="Account Saved:", icon_url=interaction.guild.icon.url)
                     await interaction.response.send_message(embed=embed)
@@ -285,4 +285,3 @@ class Olav(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Olav(bot))
-    print('Testcums is loaded.')

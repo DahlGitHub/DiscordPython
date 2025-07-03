@@ -26,3 +26,8 @@ Color_Random = random.randint(0, 0xFFFFFF)
 
 # Error Log Channel ID
 Error_Log_Channel_ID = 1388313577257042153  # Replace with your dev/log channel's ID
+
+#riotgames api
+RIOT_API_KEY = os.getenv('riot_api_key')
+RIOT_API_REGION = os.getenv('riot_api_region')
+RIOT_API_SERVER_EUW = os.getenv('riot_api_server_euw')
