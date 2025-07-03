@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import random
 
 load_dotenv()
 
@@ -12,18 +13,16 @@ DATABASE_URL = os.getenv('database_url')
 
 # Slash Commands Guilds
 GUILDS = [596027534756544514]
+DISCORD_APPLICATION_ID = os.getenv('discord_application_id')
 
 # Color Variables
 Color_Fatal = 0xB00020
 Color_Error = 0xF8C300
 Color_Warning = 0x686868
-Color_Info = 0x007FFF
-Color_Default = 0x7289DA
 
-# Module Colors
-Color_Bot = 0x7289DA
-Color_Module_Reddit = 0xFF5700
-Color_Module_TimeEdit = 0x138D75
+Color_Default = 0x7289DA
+Color_Bloons = 0xFF0000
+Color_Random = random.randint(0, 0xFFFFFF)
 
 # Error Log Channel ID
 Error_Log_Channel_ID = 1388313577257042153  # Replace with your dev/log channel's ID

@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-
+from pkgutil import iter_modules
 import config
 
 class Help(commands.Cog):
@@ -59,4 +59,3 @@ class Help(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Help(bot))
-    print('Help is loaded.')

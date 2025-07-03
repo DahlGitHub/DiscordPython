@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord import app_commands
 
 import config
+from utils import emotes
 
 """
 A module to provide most of the general information regarding the application,
@@ -26,9 +27,9 @@ class Info(commands.Cog):
         websocket = round(self.bot.latency*1000, 2)
         start = time.perf_counter()
         if websocket < 70:
-            health = config.Status_Online
+            health = emotes.Status_Online
         elif 60 < websocket < 150:
-            health = config.Status_Idle
+            health = emotes.Status_Idle
         else:
             health = config.Status_Dnd
         embed = discord.Embed(color=0x000000, description=f"{health} | Websocket Latency **{websocket}** ms!", colour=discord.Color(config.Color_Bot))
@@ -37,13 +38,14 @@ class Info(commands.Cog):
         end = time.perf_counter()
         duration = round((end - start) * 1000, 2)
         if duration < 145:
-            health = config.Status_Online
+            health = emotes.Status_Online
         elif 145 < duration < 250:
-            health = config.Status_Idle
+            health = emotes.Status_Idle
         else:
-            health = config.Status_Dnd
+            health = emotes.Status_Dnd
         embed.description += f"\n{health} | Response Time **{duration}** ms!"
         await message.edit(embed=embed)
+        await ctx.message.delete()
 
     @commands.command()
     async def user(self, ctx , member: discord.Member = None):
@@ -244,6 +246,13 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
         await ctx.message.delete()
 
+    @commands.command()
+    async def embed(self, ctx):
+        embed_url = "https://media.discordapp.net/attachments/381963689470984203/1014330043507408896/unknown-2.png?ex=686087f7&is=685f3677&hm=7f5c0d89d1abda4f4734467bd6b61fbae098176e952f994d94469477e30903dc&"
+        await ctx.send(embed_url)
+        await ctx.message.delete()
+
+
     """
     @commands.hybrid_command(
         name="help",
@@ -268,4 +277,3 @@ class Info(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Info(bot))
-    print('Info is loaded.')

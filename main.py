@@ -17,15 +17,18 @@ import humanize
 import config
 import utils.emotes as emotes
 
+from cogs import EXTENSIONS
+
 bot = commands.Bot(
     command_prefix=commands.when_mentioned_or(config.PREFIX), 
     help_command=None, 
     case_insensitive=True,
-    application_id='1386471915597856940',
+    application_id=config.DISCORD_APPLICATION_ID,
     intents=discord.Intents.all())
 
 load_dotenv()
-TOKEN = os.getenv('discord_token')
+TOKEN = config.DISCORD_TOKEN
+os.environ["JISHAKU_NO_UNDERSCORE"] = "True"
 
 db = Database()
 bot.db = db
@@ -42,10 +45,13 @@ async def cogs():
     """
     This code is executed whenever the main.py is launched, loading all the following /cogs/__.py files.
     """
-    for filename in os.listdir("cogs"):
-        if filename.endswith(".py") and filename != "__init__.py":
-            await bot.load_extension(f'cogs.{filename[:-3]}')
-            print(filename)
+    for extension in EXTENSIONS:
+        try:
+            await bot.load_extension(extension)
+            print(f"✅ Loaded extension: {extension}")
+        except Exception as e:
+            print(f"❌ Failed to load extension {extension}: {e}")
+    
 
 # Utilizing discord.Embed in main.py to keep it seperate from custom EmbedBuilder.
 @bot.command()
@@ -84,20 +90,26 @@ async def reloadutils(ctx, module_name: str):
         await ctx.send(embed=embed)
 
 
-async def manage_extension(ctx, action: str, extensions: str):
-    extension = extensions.lower()
+async def manage_extension(ctx, action: str, extension: str):
+    extension = extension.strip().lower()
+
+    if not extension.startswith("cogs."):
+        extension = f"cogs.{extension}"
     try:
         method = getattr(ctx.bot, f"{action}_extension")
-        await method(f'cogs.{extension}')
-        embed = discord.Embed(description=f'{emotes.Check} `{extension.capitalize()}` extension has been {action}ed.', color=config.Color_Default)
-        embed.set_author(name="Cogs Handler:", icon_url=bot.user.display_avatar.url)
-        await ctx.send(embed=embed)
-        await ctx.message.delete()
+        await method(extension)
+        embed = discord.Embed(
+            description=f'{emotes.Check} `{extension}` extension has been {action}ed.',
+            color=config.Color_Default)
     except Exception as e:
-        embed = discord.Embed(description=f"{emotes.Cross} Failed to {action} extension `{extension.capitalize()}`:\n{e}",color=config.Color_Error)
-        embed.set_author(name="Cogs Handler:", icon_url=bot.user.display_avatar.url)
-        await ctx.send(embed=embed)
-        await ctx.message.delete()
+        embed = discord.Embed(
+            description=f"{emotes.Cross} Failed to {action} extension `{extension}`:\n{e}",
+            color=config.Color_Error)
+
+    embed.set_author(name="Cogs Handler:", icon_url=bot.user.display_avatar.url)
+    await ctx.send(embed=embed)
+    await ctx.message.delete()
+
         
 @bot.command(hidden=True)
 @commands.is_owner()
@@ -133,6 +145,9 @@ Printing out status and versions upon start, notifying the owner the program is 
 @bot.event
 async def on_ready():
     
+    print(f'Total cogs loaded: {len(bot.cogs)}')
+    print(f'Total commands loaded: {len(bot.commands)}')
+    print(f'Total slash commands loaded: {len(bot.tree.get_commands())}')
     print(f'Status: {bot.user} is online, {datetime.now()}.')
     print(f"discord.py API version: {discord.__version__}")
     print(f"Python version: {platform.python_version()}")
@@ -140,6 +155,7 @@ async def on_ready():
 async def main():
     await db.connect()
     await cogs()
+    await bot.load_extension('jishaku')
     await bot.start(TOKEN)
 
 asyncio.run( main() )

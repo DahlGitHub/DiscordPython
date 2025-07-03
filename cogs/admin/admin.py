@@ -52,29 +52,28 @@ class Admin(commands.Cog):
         """
         await self.bot.get_guild(ctx.guild.id).leave()
 
-    # ------------ Slash command sync commands --------------
-
-    @commands.command(name="globalsync")
-    @commands.is_owner()
-    async def globalsync(self, ctx):
-        """
-        Syncs slash commands globally (can take up to an hour to propagate).
-        """
-        synced = await ctx.bot.tree.sync()
-        await ctx.send(f"🔄 Globally synced {len(synced)} commands.")
-
-    @commands.command(name="localsync")
+    @commands.command(name="sync")
     @commands.has_permissions(administrator=True)
-    async def localsync(self, ctx):
+    async def sync(self, ctx):
         """
         Syncs slash commands for the current guild (instant update).
         """
+        tree = self.bot.tree
         guild = ctx.guild
-        synced = await ctx.bot.tree.sync(guild=guild)
+        tree.copy_global_to(guild=guild)
+        synced = await tree.sync(guild=guild)
         await ctx.send(f"🔄 Locally synced {len(synced)} commands for guild `{guild.name}`.")
 
-    
+    @commands.command(name="localremove")
+    @commands.is_owner()
+    @commands.has_permissions(administrator=True)
+    async def syncremove(self, ctx):
+        """
+        Removes all locally synced slash commands for the current guild.
+        """
+        guild = ctx.guild
+        ctx.bot.tree.clear_commands(guild=guild)
+        await ctx.send(f"🗑️ Locally removed all slash commands for guild `{guild.name}`.")
 
 async def setup(bot):
     await bot.add_cog(Admin(bot))
-    print('Admin is loaded.')
