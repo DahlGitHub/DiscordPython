@@ -5,3 +5,6 @@ __pycache__/
 .env
 settings.json
 archive.py
+.idea/
+cogs/riot/olav.py
+cogs/riot/olav.py
