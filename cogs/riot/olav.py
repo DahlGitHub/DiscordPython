@@ -24,7 +24,7 @@ class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms
 
     def __init__(self, bot):
         self.bot = bot
-        self.LOL_RANK_TYPEs = {
+        self.LOL_RANK_TYPE = {
             "RANKED_SOLO_SR": "Ranked Solo/Duo",
             "RANKED_FLEX_SR": "Ranked Flex",
             "RANKED_TFT": "Ranked TFT",
@@ -177,10 +177,10 @@ class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms
         """
         Get your account information.
         """
-        print(f"https://{config.RIOT_API_REGION}/riot/account/v1/accounts/by-riot-id/{username}/{tag}?api_key={config.RIOT_API_KEY}")
+        print(f"https://{config.RIOT_API_REGION}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{username}/{tag}?api_key={config.RIOT_API_KEY}")
 
         async with aiohttp.ClientSession() as session:
-            url = f"https://{config.RIOT_API_REGION}/riot/account/v1/accounts/by-riot-id/{username}/{tag}"
+            url = f"https://{config.RIOT_API_REGION}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{username}/{tag}"
             headers = {"X-Riot-Token": config.RIOT_API_KEY}
             try:
                 response = await session.get(url, headers=headers)
@@ -212,7 +212,7 @@ class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms
 
             try:
                 response = await session.get(
-                    f'https://{config.RIOT_API_SERVER_EUW}/lol/league/v4/entries/by-puuid/{puuid}',
+                    f'https://{config.RIOT_API_SERVER_EUW}.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}',
                     headers={'X-Riot-Token': config.RIOT_API_KEY}
                 )
                 if response.status == 200:
@@ -248,7 +248,7 @@ class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms
         Save your League of Legends account information.
         """
         async with aiohttp.ClientSession() as session:
-            url = f"https://{config.RIOT_API_REGION}/riot/account/v1/accounts/by-riot-id/{username}/{tag}"
+            url = f"https://{config.RIOT_API_REGION}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{username}/{tag}"
             headers = {"X-Riot-Token": config.RIOT_API_KEY}
             try:
                 response = await session.get(url, headers=headers)

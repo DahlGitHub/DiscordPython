@@ -26,7 +26,6 @@ bot = commands.Bot(
     application_id=config.DISCORD_APPLICATION_ID,
     intents=discord.Intents.all())
 
-load_dotenv()
 TOKEN = config.DISCORD_TOKEN
 os.environ["JISHAKU_NO_UNDERSCORE"] = "True"
 
