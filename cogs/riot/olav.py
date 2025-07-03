@@ -1,6 +1,6 @@
-import discordt
+import discord
 from discord.ext import commands
-from discord import app_commandst
+from discord import app_commands
 from typing import List
 import aiohttp
 import asyncio
