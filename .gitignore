@@ -4,6 +4,5 @@ __pycache__/
 
 .env
 settings.json
-
 archive.py
-.idea\
+.idea/
