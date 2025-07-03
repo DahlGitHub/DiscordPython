@@ -2,48 +2,51 @@ import discord
 from datetime import datetime
 import config  # assumes your color & emoji constants are here
 
-# Theme color mapping
-THEME_COLORS = {
-    "success": config.Color_Info,          # you can replace with a green tone
-    "info": config.Color_Info,
-    "warning": config.Color_Warning,
-    "error": config.Color_Error,
-    "default": config.Color_Default,
-    "bot": config.Color_Bot,
-    "reddit": config.Color_Module_Reddit,
-    "timeedit": config.Color_Module_TimeEdit
-}
-
 class EmbedBuilder:
-    def __init__(self, description=None, color=None, ctx=None):
-        self.ctx = ctx  # Optional context for icon shortcuts
-        resolved_color = self._resolve_color(color)
+    """
+    A custom class to build Discord embeds with a fluent interface.
+
+    Usage:
+    embed = EmbedBuilder(description="Your description here", color=config.Color_Default)
+        .author(name="Author Name", icon="user")
+        .footer(text="Footer text", icon="server")
+        .image(url="https://example.com/image.png")
+        .thumbnail(url="https://example.com/thumbnail.png")
+        .timestamp()
+        .field(name="Field Name", value="Field Value", inline=True)
+        .set_description("Updated description")
+        .set_color(config.Color_Info)
+        .build()
+    """
+    def __init__(self, title = None, url = None, description: str = None, type='rich', color: int = config.Color_Default):
         self.embed = discord.Embed(
-            description=description or "",
-            color=discord.Color(resolved_color)
-        )
+            title=title,
+            description=description,
+            url=url,
+            type=type,
+            color=discord.Color(color))
 
-    def _resolve_color(self, value):
-        if isinstance(value, int):
-            return value
-        elif isinstance(value, str):
-            return THEME_COLORS.get(value.lower(), config.Color_Default)
-        return config.Color_Default
+    def __getattr__(self, attr):
+        return getattr(self.embed, attr)
+    
+    def __repr__(self):
+        return repr(self.embed)
 
-    def _resolve_icon(self, value):
-        if not value:
-            return None
-        if isinstance(value, str):
-            if not self.ctx:
-                return value
-            v = value.lower()
-            if v == "server":
-                return self.ctx.guild.icon.url if self.ctx.guild and self.ctx.guild.icon else None
-            if v == "user":
+    def _resolve_icon(self, icon_key):
+        """
+        Resolves icon keywords like 'user', 'bot', or 'server' to actual avatar/icon URLs.
+        """
+        if isinstance(icon_key, str):
+            if icon_key.startswith("http"):
+                return icon_key
+            elif icon_key == "user" and self.ctx:
                 return self.ctx.author.display_avatar.url
-            if v == "bot":
-                return self.ctx.me.display_avatar.url
-        return value  # direct URL or object with .url
+            elif icon_key == "server" and self.ctx and self.ctx.guild and self.ctx.guild.icon:
+                return self.ctx.guild.icon.url
+            elif icon_key == "bot" and self.bot:
+                return self.bot.user.display_avatar.url
+        return None
+    
 
     def author(self, name=None, icon=None):
         if name:
@@ -66,26 +69,10 @@ class EmbedBuilder:
         return self
 
     def timestamp(self, time=None):
-        self.embed.timestamp = time or datetime.utcnow()
+        self.embed.timestamp = time or datetime.datetime.now()
         return self
 
     def field(self, name=None, value=None, inline=False):
         if name and value:
             self.embed.add_field(name=name, value=value, inline=inline)
         return self
-
-    def set_description(self, text=None):
-        if text:
-            self.embed.description = text
-        return self
-
-    def set_color(self, color=None):
-        if color:
-            self.embed.color = discord.Color(self._resolve_color(color))
-        return self
-
-    def theme(self, name):
-        return self.set_color(name)
-
-    def build(self):
-        return self.embed

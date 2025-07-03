@@ -122,4 +122,3 @@ class Embedfix(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Embedfix(bot))
-    print("Embedfix loaded with slash commands!")
