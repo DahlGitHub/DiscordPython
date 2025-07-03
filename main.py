@@ -127,7 +127,7 @@ async def reload(ctx, extension: str):
     await manage_extension(ctx, "reload", extension)
 
 @bot.command(hidden=True)
-@commands.is_owner()
+# @commands.is_owner()
 async def extensions(ctx):
     loaded = list(bot.extensions.keys())
     if not loaded:

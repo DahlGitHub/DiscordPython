@@ -1,6 +1,6 @@
-import discord
-from discord import app_commands
+import discordt
 from discord.ext import commands
+from discord import app_commandst
 from typing import List
 import aiohttp
 import asyncio
@@ -17,13 +17,14 @@ import config
 
 
 class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms)"):
+
     """
     Testcums commands, general configuration for the bot. 
     """
 
     def __init__(self, bot):
         self.bot = bot
-        self.LOL_RANK_TYPE = {
+        self.LOL_RANK_TYPEs = {
             "RANKED_SOLO_SR": "Ranked Solo/Duo",
             "RANKED_FLEX_SR": "Ranked Flex",
             "RANKED_TFT": "Ranked TFT",
@@ -40,6 +41,7 @@ class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms
 
         embed = discord.Embed(description="   ".join([role.mention for role in roles]),
                               colour=discord.Colour(config.Color_Default))
+
         embed.set_author(name=f"{ctx.guild} Roles ({len(ctx.guild.roles) - 1})", icon_url=ctx.guild.icon.url)
         await ctx.send(embed=embed)
         await ctx.message.delete()
@@ -176,6 +178,7 @@ class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms
         Get your account information.
         """
         print(f"https://{config.RIOT_API_REGION}/riot/account/v1/accounts/by-riot-id/{username}/{tag}?api_key={config.RIOT_API_KEY}")
+
         async with aiohttp.ClientSession() as session:
             url = f"https://{config.RIOT_API_REGION}/riot/account/v1/accounts/by-riot-id/{username}/{tag}"
             headers = {"X-Riot-Token": config.RIOT_API_KEY}
@@ -195,6 +198,7 @@ class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms
 
             dbquery = "SELECT puuid FROM riot_accounts WHERE username = $1 AND tag = $2"
             dbresult = await self.bot.db.fetchrow(dbquery, username.lower(), tag.lower())
+
             if dbresult:
                 puuid = dbresult['puuid']
             else:
@@ -216,6 +220,7 @@ class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms
                     print(f"Response data for account info: {data}")
                 else:
                     print(f"Failed to fetch ranked information. Status code: {response.status}, Response: {await response.text()}, URL: {url} ")
+
                     await ctx.send(
                         f"❌ Failed to fetch ranked information for `{username}#{tag}`. Please check the username and tag."
                     )
@@ -231,6 +236,7 @@ class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms
                 title=f"{username}'s Account Information",
                 description=f"{username}#{tag} has {data[0]['wins']} wins and {data[0]['losses']} losses in {self.LOL_RANK_TYPE[data[0]['queueType']]}.",
                 color=discord.Colour(config.Color_Default)
+
             )
             await ctx.send(embed=embed)
 
