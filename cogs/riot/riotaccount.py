@@ -16,9 +16,9 @@ import config
 #     ]
 
 
-class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms)"):
+class RiotAccount(commands.GroupCog, name="riotaccount", description="RiotAccount commands"):
     """
-    Testcums commands, general configuration for the bot. 
+    RiotAccount commands.
     """
 
     def __init__(self, bot):
@@ -168,11 +168,12 @@ class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms
     async def fruits(self, interaction: discord.Interaction, fruit: str):
         await interaction.response.send_message(f'Your favourite fruit seems to be {fruit}')
 
-    # @app_commands.command(name='my_lol_account', description='Get your lol account information')
-    # @app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in config.GUILDS])
-    # async def my_account(self, interaction: discord.Interaction, username: str, tag: str):
-    @commands.command(name='my_account', description='Get your League of Legends account information')
-    async def my_account(self, ctx, username: str, tag: str):
+
+    # @commands.command(name='my_account', description='Get your League of Legends account information')
+    @app_commands.command(name='my_account', description='Get your League of Legends account information')
+    @app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in config.GUILDS])
+    @app_commands.describe(username='Your Riot username', tag='Your Riot tag')
+    async def my_account(self, interaction: discord.Interaction, username: str, tag: str):
         """
         Get your account information.
         """
@@ -203,8 +204,8 @@ class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms
                     description=f"❌ No account found for `{username}#{tag}` in the database, please add it with command '~save_lol_account [username] [tag]' (without #).",
                     color=discord.Colour(config.Color_Error)
                 )
-                embed.set_author(name="Error:", icon_url=ctx.guild.icon.url)
-                await ctx.send(embed=embed)
+                embed.set_author(name="Error:", icon_url=interaction.guild.icon.url)
+                await interaction.response.send_message(embed=embed)
                 return
 
             try:
@@ -218,13 +219,13 @@ class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms
                 else:
                     print(f"Failed to fetch ranked information. Status code: {response.status}, Response: {await response.text()}, URL: {url} ")
 
-                    await ctx.send(
+                    await interaction.response.send_message(
                         f"❌ Failed to fetch ranked information for `{username}#{tag}`. Please check the username and tag."
                     )
                     return
             except aiohttp.ClientError as e:
                 print(f"ClientError occurred while fetching ranked info: {e}")
-                await ctx.send(
+                await interaction.response.send_message(
                     f"❌ An error occurred while fetching ranked information for `{username}#{tag}`."
                 )
                 return
@@ -234,7 +235,7 @@ class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms
                 description=f"{username}#{tag} has {data[0]['wins']} wins and {data[0]['losses']} losses in {self.LOL_RANK_TYPE[data[0]['queueType']]}.",
                 color=discord.Colour(config.Color_Default)
             )
-            await ctx.send(embed=embed)
+            await interaction.response.send_message(embed=embed)
 
     # @commands.command(name='save_lol_account', description='Save your League of Legends account information')
     @app_commands.command(name='save_lol_account', description='Save your League of Legends account information')
@@ -286,5 +287,5 @@ class Olav(commands.GroupCog, name="olav", description="Olav's commands (testcms
 
 
 async def setup(bot):
-    await bot.add_cog(Olav(bot))
+    await bot.add_cog(RiotAccount(bot))
 
