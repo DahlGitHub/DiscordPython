@@ -21,7 +21,12 @@ class ErrorHandler(commands.Cog):
         tree.on_error = self._old_tree_error
 
     async def tree_on_error(self, interaction: Interaction, error: app_commands.AppCommandError):
-        await interaction.response.send_message(error, ephemeral=False)
+        if isinstance(error, app_commands.errors.MissingPermissions):
+            return
+        try:
+            await interaction.response.send_message(str(error), ephemeral=True)
+        except Exception:
+            await interaction.followup.send(str(error), ephemeral=True)
         print(f"An error occurred in a slash command: {error}")
         
     @commands.Cog.listener()
