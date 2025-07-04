@@ -26,7 +26,6 @@ bot = commands.Bot(
     application_id=config.DISCORD_APPLICATION_ID,
     intents=discord.Intents.all())
 
-load_dotenv()
 TOKEN = config.DISCORD_TOKEN
 os.environ["JISHAKU_NO_UNDERSCORE"] = "True"
 
@@ -127,7 +126,7 @@ async def reload(ctx, extension: str):
     await manage_extension(ctx, "reload", extension)
 
 @bot.command(hidden=True)
-@commands.is_owner()
+# @commands.is_owner()
 async def extensions(ctx):
     loaded = list(bot.extensions.keys())
     if not loaded:
