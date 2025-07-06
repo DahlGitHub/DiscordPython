@@ -56,71 +56,6 @@ class RiotAccount(commands.GroupCog, name="riotaccount", description="RiotAccoun
         await ctx.send(embed=embed)
         await ctx.message.delete()
 
-    # @commands.command()
-    # async def asqlitelogTest(self, ctx, context: str = None, hitormiss: str = None, count: int = None):
-    #     """
-    #     Test command to log a message.
-    #     """
-    #
-    #     # Check if all required arguments are provided
-    #     if context is None or hitormiss is None or count is None:
-    #         await self.errorMessage(ctx, "Please specify context, hit or miss (hit/miss), and count. (e.g. `~logTest vaal_gem hit 8`)")
-    #         return
-    #
-    #     # Validate hitormiss input
-    #     if hitormiss.lower() not in ["hit", "miss"]:
-    #         await self.errorMessage(ctx, "Hit or miss must be either 'hit' or 'miss'.")
-    #         return
-    #
-    #     hitormiss_bool = hitormiss.lower() == "hit"
-    #
-    #     user = ctx.author.id
-    #
-    #     async with asqlite.connect('data/logtest.db') as db:
-    #         async with db.cursor() as cursor:
-    #             await cursor.execute('CREATE TABLE IF NOT EXISTS logtest (id INTEGER PRIMARY KEY, user INTEGER, context TEXT, hits INTEGER, misses INTEGER)')
-    #
-    #             # Get current count for this user/context/hitormiss combination
-    #             await cursor.execute('SELECT hits, misses FROM logtest WHERE user = ? AND context = ?', (user, context))
-    #             result = await cursor.fetchone()
-    #             hits, misses = 0, 0
-    #             if hitormiss_bool:
-    #                 hits += count
-    #             else:
-    #                 misses += count
-    #             if result is not None:
-    #                 hits += result[0]
-    #                 misses += result[1]
-    #                 await cursor.execute('UPDATE logtest SET hits = ?, misses = ? WHERE user = ? AND context = ?', (user, context, hits, misses))
-    #             else:
-    #                 await cursor.execute('INSERT INTO logtest (user, context, hits, misses) VALUES (?, ?, ?, ?)', (user, context, hits, misses))
-    #
-    #             await db.commit()
-    #
-    #             # Send confirmation message
-    #             embed = discord.Embed(
-    #                 description=f"✅ Logged {hits} hits and {misses} misses for **{context}**",
-    #                 color=discord.Colour(config.Color_Bot)
-    #             )
-    #             embed.set_author(name="Log Updated:", icon_url=ctx.guild.icon.url)
-    #             await ctx.send(embed=embed)
-    #             await ctx.message.delete()
-    # @app_commands.command(name='fruits', description='Select your favourite fruit')
-    # @app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in config.GUILDS])
-    # @app_commands.describe(fruit='Select your favourite fruit')
-    # @app_commands.autocomplete(fruit=fruit_autocomplete)
-    # async def fruits(self, interaction: discord.Interaction, fruit: str):
-    #     await interaction.response.send_message(f'Your favourite fruit seems to be {fruit}')
-
-    # async def errorMessage(ctx, message: str):
-    #     """
-    #     Helper function to create an error message.
-    #     """
-    #     embed = discord.Embed(description=f"❌ {message}", color=discord.Color(config.Color_Error))
-    #     embed.set_author(name="Error:", icon_url=ctx.guild.icon.url)
-    #     await ctx.send(embed=embed)
-    #     await ctx.message.delete()
-
     async def fruits_autocomplete(self, interaction: discord.Interaction, current: str, ) -> List[
         app_commands.Choice[str]]:
         fruits = ['Banana', 'Pineapple', 'Apple', 'Watermelon', 'Melon', 'Cherry']
@@ -177,36 +112,37 @@ class RiotAccount(commands.GroupCog, name="riotaccount", description="RiotAccoun
         """
         Get your account information.
         """
+        dbquery = "SELECT puuid FROM riot_accounts WHERE username = $1 AND tag = $2"
+        dbresult = await self.bot.db.fetchrow(dbquery, username.lower(), tag.lower())
+
+        if dbresult:
+            puuid = dbresult['puuid']
+        # else:
+            # embed = discord.Embed(
+            #     description=f"❌ No account found for `{username}#{tag}` in the database, please add it with command '~save_lol_account [username] [tag]' (without #).",
+            #     color=discord.Colour(config.Color_Error)
+            # )
+            # embed.set_author(name="Error:", icon_url=interaction.guild.icon.url)
+            # await interaction.response.send_message(embed=embed)
+            # return
+        
         async with aiohttp.ClientSession() as session:
-            url = f"https://{config.RIOT_API_REGION}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{username}/{tag}"
-            headers = {"X-Riot-Token": config.RIOT_API_KEY}
-            try:
-                response = await session.get(url, headers=headers)
-                if response.status == 200:
-                    data = await response.json()
-                    # print(f"Response data: {data}")
-                else:
-                    print(f"Failed to fetch data. Status code: {response.status}, Response: {await response.text()}, URL: {url}")
+            if not puuid:
+                url = f"https://{config.RIOT_API_REGION}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{username}/{tag}"
+                headers = {"X-Riot-Token": config.RIOT_API_KEY}
+                try:
+                    response = await session.get(url, headers=headers)
+                    if response.status == 200:
+                        data = await response.json()
+                        # print(f"Response data: {data}")
+                    else:
+                        print(f"Failed to fetch account from riotgames and database. Status code: {response.status}, Response: {await response.text()}, URL: {url}")
 
-            except aiohttp.ClientError as e:
-                print(f"ClientError occurred: {e}")
+                except aiohttp.ClientError as e:
+                    print(f"ClientError occurred: {e}")
 
-            puuid = data['puuid']
-            # print(f"Fetching account information for {username}#{tag}... puuid:{puuid}")
-
-            dbquery = "SELECT puuid FROM riot_accounts WHERE username = $1 AND tag = $2"
-            dbresult = await self.bot.db.fetchrow(dbquery, username.lower(), tag.lower())
-
-            if dbresult:
-                puuid = dbresult['puuid']
-            else:
-                embed = discord.Embed(
-                    description=f"❌ No account found for `{username}#{tag}` in the database, please add it with command '~save_lol_account [username] [tag]' (without #).",
-                    color=discord.Colour(config.Color_Error)
-                )
-                embed.set_author(name="Error:", icon_url=interaction.guild.icon.url)
-                await interaction.response.send_message(embed=embed)
-                return
+                puuid = data['puuid']
+                # print(f"Fetching account information for {username}#{tag}... puuid:{puuid}")            
 
             try:
                 response = await session.get(
@@ -288,4 +224,3 @@ class RiotAccount(commands.GroupCog, name="riotaccount", description="RiotAccoun
 
 async def setup(bot):
     await bot.add_cog(RiotAccount(bot))
-
