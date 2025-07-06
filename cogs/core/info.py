@@ -31,8 +31,8 @@ class Info(commands.Cog):
         elif 60 < websocket < 150:
             health = emotes.Status_Idle
         else:
-            health = config.Status_Dnd
-        embed = discord.Embed(color=0x000000, description=f"{health} | Websocket Latency **{websocket}** ms!", colour=discord.Color(config.Color_Bot))
+            health = emotes.Status_Dnd
+        embed = discord.Embed(color=0x000000, description=f"{health} | Websocket Latency **{websocket}** ms!", colour=discord.Color(config.Color_Default))
         embed.set_author(name='Ping', icon_url=self.bot.user.display_avatar)
         message = await ctx.send(embed=embed)
         end = time.perf_counter()
@@ -55,22 +55,22 @@ class Info(commands.Cog):
         member = ctx.author if not member else member
         local_emojis = []
         if member == ctx.guild.owner:
-            local_emojis.append(config.Server_Owner)
+            local_emojis.append(emotes.Server_Owner)
         if ctx.channel.permissions_for(member).ban_members:
-            local_emojis.append(config.Server_Mod)
+            local_emojis.append(emotes.Server_Mod)
         if member in ctx.guild.premium_subscribers:
-            local_emojis.append(config.Server_Boost)
+            local_emojis.append(emotes.Server_Boost)
         emojies = {emoji for emoji in local_emojis[0:]}
         roles = [role for role in member.roles[0:]]
 
         sl = {
-            discord.Status.online: config.Status_Online,
-            discord.Status.offline: config.Status_Offline,
-            discord.Status.idle: config.Status_Idle,
-            discord.Status.dnd: config.Status_Dnd
+            discord.Status.online: emotes.Status_Online,
+            discord.Status.offline: emotes.Status_Offline,
+            discord.Status.idle: emotes.Status_Idle,
+            discord.Status.dnd: emotes.Status_Dnd
             }
 
-        embed = discord.Embed(description="", color=discord.Colour(config.Color_Bot), timestamp=ctx.message.created_at)
+        embed = discord.Embed(description="", color=discord.Colour(config.Color_Default), timestamp=ctx.message.created_at)
 
         embed.set_author(name=member, icon_url=member.display_avatar)
         embed.set_thumbnail(url=member.display_avatar)
@@ -99,7 +99,7 @@ class Info(commands.Cog):
         except AttributeError:
             owner = "AdrianD#8008"
 
-        embed = discord.Embed(description="", color=discord.Colour(config.Color_Bot))
+        embed = discord.Embed(description="", color=discord.Colour(config.Color_Default))
 
         embed.set_author(name=self.bot.user, icon_url=self.bot.user.display_avatar)
         embed.set_thumbnail(url=self.bot.user.display_avatar)
@@ -133,11 +133,11 @@ class Info(commands.Cog):
         embed = discord.Embed(
             colour=discord.Colour(config.Color_Bot),
             description=(
-                f'{config.Server_Owner} **{ctx.guild.owner}** | {ctx.guild.owner.mention} \n'
-                f'\n{config.Server_Emoji} **{len(ctx.guild.emojis)}** | {config.Server_Roles} **{len(ctx.guild.roles)}**\n'
-                f'\n{config.Server_Category} **{len(categories)}** | {config.Channel_Text} **{len(text_channels)}** | {config.Channel_Voice} **{len(voice_channels)}**\n'
-                f'\n{config.Server_Member} **{len(list(filter(lambda m: not m.bot, ctx.guild.members)))}** | {config.Server_Bot} **{len(list(filter(lambda m: m.bot, ctx.guild.members)))}**\n'
-                f'\n{config.Status_Online} **{statuses[0]}**\n{config.Status_Idle} **{statuses[1]}**\n{config.Status_Dnd} **{statuses[2]}**\n{config.Status_Offline} **{statuses[3]}**')
+                f'{emotes.Server_Owner} **{ctx.guild.owner}** | {ctx.guild.owner.mention} \n'
+                f'\n{emotes.Server_Emoji} **{len(ctx.guild.emojis)}** | {emotes.Server_Roles} **{len(ctx.guild.roles)}**\n'
+                f'\n{emotes.Server_Category} **{len(categories)}** | {emotes.Channel_Text} **{len(text_channels)}** | {emotes.Channel_Voice} **{len(voice_channels)}**\n'
+                f'\n{emotes.Server_Member} **{len(list(filter(lambda m: not m.bot, ctx.guild.members)))}** | {emotes.Server_Bot} **{len(list(filter(lambda m: m.bot, ctx.guild.members)))}**\n'
+                f'\n{emotes.Status_Online} **{statuses[0]}**\n{emotes.Status_Idle} **{statuses[1]}**\n{emotes.Status_Dnd} **{statuses[2]}**\n{emotes.Status_Offline} **{statuses[3]}**')
                 )
         embed.set_thumbnail(url=ctx.guild.icon.url)
         embed.add_field(name='Created', value=(ctx.guild.created_at.strftime("%a, %d %B %Y")),inline=False)
@@ -153,7 +153,7 @@ class Info(commands.Cog):
         """
         roles = [role for role in ctx.guild.roles[1:]]
         
-        embed = discord.Embed(description="   ".join([role.mention for role in roles]), colour=discord.Colour(config.Color_Bot))
+        embed = discord.Embed(description="   ".join([role.mention for role in roles]), colour=discord.Colour(config.Color_Default))
         embed.set_author(name=f"{ctx.guild} Roles ({len(ctx.guild.roles)-1})", icon_url=ctx.guild.icon.url)
        
         await ctx.send(embed=embed)
@@ -166,7 +166,7 @@ class Info(commands.Cog):
         """
         emojis = " ".join(map(str, ctx.guild.emojis))
 
-        embed = discord.Embed(description=f'{emojis}', colour=discord.Colour(config.Color_Bot))
+        embed = discord.Embed(description=f'{emojis}', colour=discord.Colour(config.Color_Default))
         embed.set_author(name=f"{ctx.guild} Emotes ({len(ctx.guild.emojis)})", icon_url=ctx.guild.icon.url)
         
         await ctx.send(embed=embed)
@@ -177,27 +177,27 @@ class Info(commands.Cog):
         """
         Get a list of all the channels in the server.
         """
-        embed = discord.Embed(colour=config.Color_Info)
+        embed = discord.Embed(colour=config.Color_Default)
         embed.set_author(icon_url=ctx.guild.icon.url,name=f"{ctx.guild} Channels ({len(ctx.guild.channels)-len(ctx.guild.categories)})")
         for c in ctx.guild.categories:
             x = []
             for i in c.channels:
                 if isinstance(i, discord.TextChannel):
                     if i.is_nsfw():
-                        channel = config.Channel_Nsfw
+                        channel = emotes.Channel_Nsfw
                     elif str(i.type) == "news":
-                        channel = config.Channel_News
+                        channel = emotes.Channel_News
                     else:
                         if i.overwrites_for(ctx.guild.default_role).read_messages is False:
-                            channel = config.Channel_Lock
+                            channel = emotes.Channel_Lock
                         else:
-                            channel = config.Channel_Text
+                            channel = emotes.Channel_Text
                     x.append(f"{channel} {i.name}")
                 elif isinstance(i, discord.VoiceChannel):
                     if i.overwrites_for(ctx.guild.default_role).read_messages is False:
-                        channel = config.Channel_Voice_Lock
+                        channel = emotes.Channel_Voice_Lock
                     else:
-                        channel = config.Channel_Voice
+                        channel = emotes.Channel_Voice
                     x.append(f"{channel} {i.name}")
                 else:
                     pass
@@ -210,20 +210,20 @@ class Info(commands.Cog):
             else:
                 if isinstance(o, discord.TextChannel):
                     if o.is_nsfw():
-                        channel = config.Channel_Nsfw
+                        channel = emotes.Channel_Nsfw
                     elif str(o.type) == "news":
-                        channel = config.Channel_News
+                        channel = emotes.Channel_News
                     else:
                         if o.overwrites_for(ctx.guild.default_role).read_messages is False:
-                            channel = config.Channel_Lock
+                            channel = emotes.Channel_Lock
                         else:
-                            channel = config.Channel_Text
+                            channel = emotes.Channel_Text
                     chl.append(f"{channel} {o.name}")
                 elif isinstance(o, discord.VoiceChannel):
                     if o.overwrites_for(ctx.guild.default_role).read_messages is False:
-                        channel = config.Channel_Voice_Lock
+                        channel = emotes.Channel_Voice_Lock
                     else:
-                        channel = config.Channel_Voice
+                        channel = emotes.Channel_Voice
                     chl.append(f"{channel} {o.name}")
                 else:
                     pass
@@ -239,7 +239,7 @@ class Info(commands.Cog):
         """
         member = ctx.author if not member else member
 
-        embed = discord.Embed(color=discord.Colour(config.Color_Bot))
+        embed = discord.Embed(color=discord.Colour(config.Color_Default))
         embed.set_author(name=f"{member.display_name}#{member.discriminator}", icon_url=member.display_avatar)
         embed.set_image(url=member.display_avatar)
         
