@@ -21,8 +21,10 @@ class ErrorHandler(commands.Cog):
         tree.on_error = self._old_tree_error
 
     async def tree_on_error(self, interaction: Interaction, error: app_commands.AppCommandError):
-        if isinstance(error, app_commands.errors.MissingPermissions):
+        # Ignore commands it doesn't know, including slash commands.
+        if isinstance(error, app_commands.errors.CommandNotFound):
             return
+
         try:
             await interaction.response.send_message(str(error), ephemeral=True)
         except Exception:
@@ -32,7 +34,8 @@ class ErrorHandler(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         await ctx.send(error)
-        print(f"An error occurred: {error}")
+        print(f"An error occurred:")
+        traceback.print_exception(type(error), error, error.__traceback__)
 
 async def setup(bot):
     await bot.add_cog(ErrorHandler(bot))
