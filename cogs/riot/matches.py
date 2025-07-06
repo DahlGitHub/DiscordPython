@@ -36,9 +36,6 @@ class Matches(commands.GroupCog, name="matches", description="Riot Account Match
         # limit='The number of matches to retrieve (default is 10, max is 100)',
     )
     @app_commands.autocomplete(queue=queueID_autocomplete)
-
-
-
     async def matches(
         self,
         interaction: discord.Interaction,
@@ -76,13 +73,61 @@ class Matches(commands.GroupCog, name="matches", description="Riot Account Match
                 
         #         embed = discord.Embed(title=f"Matches for {summoner_name}", description=match_list, color=config.Color_Default)
         #         await interaction.response.send_message(embed=embed)
-        
-        print(queueid := [({key}, {value['queueid']}) for key, value in QUEUE_ID.items()])
+        print(f"Matches command called with queue: {queue}")
 
     @commands.command(name="match", description="Test command for matches")
     async def match(self, ctx):
         print(queueid := [(key, value['queueid']) for key, value in QUEUE_ID.items()])
         await ctx.message.add_reaction('✅')
+
+    
+    @commands.command(name="matches", description="Get LoL matches for a Riot Account")
+    async def matches(
+        self,
+        interaction: discord.Interaction,
+        summoner_name: str,
+        summoner_tag: str,
+        queue: str = 'RANKED_SOLO_5x5',
+        start_time: str = '160621',
+        # end_time: str = '160621',
+        # region: str = 'euw1',
+        limit: int = 10
+    ):
+
+        # Validate the limit
+        if limit < 1 or limit > 100:
+            await interaction.response.send_message("Limit must be between 1 and 100.", ephemeral=True)
+            return
+        dbquery = "SELECT puuid FROM riot_accounts WHERE username = $1 AND tag = $2"
+        dbresult = await self.bot.db.fetchrow(dbquery, username.lower(), tag.lower())
+
+        if dbresult:
+            puuid = dbresult['puuid']
+        else:
+            await interaction.response.send_message(f"No account found for the specified username and tag, please add account with command /save_lol_account.", ephemeral=True)
+            return
+        # Fetch matches from Riot API (placeholder URL)
+        time_now = discord.utils.utcnow().timestamp()
+        url = f"https://{config.RIOT_API_REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={start_time}&endTime={time_now}&queue={queue}&type=ranked&start=0&count={limit}"
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers={"X-Riot-Token": config.RIOT_API_KEY}) as response:
+                if response.status != 200:
+                    await interaction.response.send_message("Failed to fetch matches. Please check the summoner name and region.", ephemeral=True)
+                    return
+
+                data = await response.json()
+                matches = data.get("matches", [])
+
+                if not matches:
+                    await interaction.response.send_message("No matches found for the specified criteria.", ephemeral=True)
+                    return
+
+                # Format the response
+                match_list = "\n".join([f"Match ID: {match['gameId']}, Champion: {match['champion']}" for match in matches[:limit]])
+
+                embed = discord.Embed(title=f"Matches for {summoner_name}", description=match_list, color=config.Color_Default)
+                await interaction.response.send_message(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Matches(bot))

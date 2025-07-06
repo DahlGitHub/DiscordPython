@@ -134,14 +134,17 @@ class RiotAccount(commands.GroupCog, name="riotaccount", description="RiotAccoun
                     response = await session.get(url, headers=headers)
                     if response.status == 200:
                         data = await response.json()
+                        puuid = data['puuid']
                         # print(f"Response data: {data}")
                     else:
-                        print(f"Failed to fetch account from riotgames and database. Status code: {response.status}, Response: {await response.text()}, URL: {url}")
-
+                        print(f"Failed to fetch account from riotgames. Status code: {response.status}, Response: {await response.text()}, URL: {url}")
+                        await interaction.response.send_message(
+                            f"❌ Failed to fetch account information for `{username}#{tag}`. Please check the username and tag."
+                        )
+                        return
                 except aiohttp.ClientError as e:
                     print(f"ClientError occurred: {e}")
 
-                puuid = data['puuid']
                 # print(f"Fetching account information for {username}#{tag}... puuid:{puuid}")            
 
             try:
