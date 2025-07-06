@@ -6,8 +6,7 @@ load_dotenv()
 
 # Discord
 DISCORD_TOKEN = os.getenv('discord_token')
-# PREFIX = '.'
-PREFIX = '~'
+PREFIX = os.getenv('discord_prefix')
 
 # Database
 DATABASE_URL = os.getenv('database_url')

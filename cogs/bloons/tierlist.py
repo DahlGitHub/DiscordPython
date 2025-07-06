@@ -1,58 +1,41 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
-from typing import List, Tuple, Optional, Dict
-
-import config
-from datetime import datetime, timezone, timedelta
 import aiohttp
 from utils.bloons import TIERLIST
-from utils import EmbedBuilder
 
 class Tierlist(commands.Cog):
     
-
     def __init__(self, bot: commands.Bot):
         self.bot = bot
     
-    async def fetchUrl(self, url):
+    @staticmethod
+    async def fetch_url(url: str) -> str:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url+".json", headers={"User-Agent":"BTD6 Tierlist"}) as response:
+            async with session.get(url + ".json", headers={"User-Agent": "BTD6 Tierlist"}) as response:
                 data = await response.json()
                 try:
-                    image_url = data[0]["data"]["children"][0]["data"]["url"]
-                    return image_url
+                    return data[0]["data"]["children"][0]["data"]["url"]
                 except Exception:
                     return "https://demofree.sirv.com/nope-not-here.jpg"
 
-    @app_commands.command(name="bloonstierlist")
-    async def tierlist(self, interaction : discord.Interaction, version: int = None):
+    @staticmethod
+    async def bloons_tierlist(version: int | None = None) -> discord.Embed | str:
         if version is None:
             version = len(TIERLIST) - 1
 
         if version >= len(TIERLIST) or version < 0:
-            await interaction.response.send_message(f"❌ Version {version} is out of range.")
-            return
+            return f"❌ Version {version} is out of range."
 
         entry = TIERLIST[version]
 
         if not isinstance(entry, str) or not entry.startswith("http"):
-            await interaction.response.send_message(f"⚠️ No tier list found for version {version}: {entry}")
-            return
+            return f"⚠️ No tier list found for version {version}: {entry}"
 
-        image_url = await self.fetchUrl(entry)
+        image_url = await Tierlist.fetch_url(entry)
 
         embed = discord.Embed(title=f"BTD6 Tier List v{version}")
         embed.set_image(url=image_url)
-        await interaction.response.send_message(embed=embed)
-
-    @commands.command(name="add")
-    async def add(self, ctx: commands.Context, url: str):
-        await ctx.send(f"Would have added: {url}")
-
-    @commands.command(name="remove")
-    async def remove(self, ctx: commands.Context, version: int):
-        await ctx.send(f"Would have removed version {version}")
+        return embed
 
 
 async def setup(bot: commands.Bot):
