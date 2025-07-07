@@ -18,13 +18,16 @@ class EmbedBuilder:
         .set_color(config.Color_Info)
         .build()
     """
-    def __init__(self, title = None, url = None, description: str = None, type='rich', color: int = config.Color_Default):
+    def __init__(self, title = None, url = None, description: str = None, type='rich', color: int = config.Color_Default, ctx=None, bot=None, interaction=None):
         self.embed = discord.Embed(
             title=title,
             description=description,
             url=url,
             type=type,
             color=discord.Color(color))
+        self.ctx = ctx
+        self.bot = bot
+        self.interaction = interaction
 
     def __getattr__(self, attr):
         return getattr(self.embed, attr)
@@ -36,13 +39,21 @@ class EmbedBuilder:
         """
         Resolves icon keywords like 'user', 'bot', or 'server' to actual avatar/icon URLs.
         """
+
+
         if isinstance(icon_key, str):
+            context = None
+            if self.ctx:    
+                context = self.ctx
+            elif self.interaction:
+                context = self.interaction
+                
             if icon_key.startswith("http"):
                 return icon_key
-            elif icon_key == "user" and self.ctx:
-                return self.ctx.author.display_avatar.url
-            elif icon_key == "server" and self.ctx and self.ctx.guild and self.ctx.guild.icon:
-                return self.ctx.guild.icon.url
+            elif icon_key == "user" and context:
+                return context.author.display_avatar.url
+            elif icon_key == "server" and context.guild and context.guild.icon:
+                return context.guild.icon.url
             elif icon_key == "bot" and self.bot:
                 return self.bot.user.display_avatar.url
         return None
