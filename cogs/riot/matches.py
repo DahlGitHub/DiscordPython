@@ -106,7 +106,7 @@ class Matches(commands.GroupCog, name="matches", description="Riot Account Match
         else:
             await interaction.response.send_message(f"No account found for the specified username and tag, please add account with command /save_lol_account.", ephemeral=True)
             return
-        # Fetch matches from Riot API (placeholder URL)
+        
         time_now = discord.utils.utcnow().timestamp()
         url = f"https://{config.RIOT_API_REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={start_time}&endTime={time_now}&queue={queue}&type=ranked&start=0&count={limit}"
 
