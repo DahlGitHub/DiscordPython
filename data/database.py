@@ -32,3 +32,8 @@ class Database:
     async def fetch(self, query: str, *args):
         """Fetch multiple rows."""
         return await self.conn.fetch(query, *args)
+    
+    async def fetchval(self, query: str, *args):
+        """Fetch a single value."""
+        return await self.conn.fetchval(query, *args)
+
