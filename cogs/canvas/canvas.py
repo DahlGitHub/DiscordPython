@@ -50,8 +50,24 @@ class Canvas(commands.Cog):
         embed = EmbedBuilder(
             title="Canvas Command",
             description="This is a placeholder for the Canvas command.",
+            bot=self.bot,
+            ctx=ctx,
         ).author(name="Canvas", icon="bot")
         await ctx.send(embed=embed)
+
+    @app_commands.command(name="customembed", description="Alias for the canvas command")
+    @app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in config.GUILDS])
+    async def CustomEmbedSlash(self, interaction: discord.Interaction):
+        """
+        Alias for the canvas command.
+        """
+        embed = EmbedBuilder(
+            title="Canvas Command",
+            description="This is a placeholder for the Canvas command.",
+            bot=self.bot,
+            interaction=interaction,
+        ).author(name="Canvas", icon="bot")
+        await interaction.response.send_message(embed=embed)
 
     @commands.command()
     async def DefaultEmbed(self, ctx):
