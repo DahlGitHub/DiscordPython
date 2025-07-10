@@ -53,6 +53,7 @@ class Matches(commands.GroupCog, name="matches", description="Riot Account Match
         #     return
 
         # Fetch matches from Riot API (placeholder URL)
+        # Note: probaly puuid is needed instead of summoner name and tag
         # url = f"https://{region}.api.riotgames.com/lol/match/v4/matchlists/by-account/{summoner_name}?queue={queue}&beginTime={start_time}&endTime={end_time}&endIndex={limit}"
         
         # async with aiohttp.ClientSession() as session:

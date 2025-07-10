@@ -45,6 +45,33 @@ class RiotAccount(commands.GroupCog, name="riotaccount", description="RiotAccoun
         await ctx.send(embed=embed)
         await ctx.message.delete()
 
+    async def getPuuid (self, username: str, tag: str):
+        
+        dbquery = "SELECT puuid FROM riot_accounts WHERE username = $1 AND tag = $2"
+        dbresult = await self.bot.db.fetchrow(dbquery, username.lower(), tag.lower())
+        if dbresult:
+            return (True, dbresult['puuid'])
+        else:
+
+            async with aiohttp.ClientSession() as session:
+                url = f"https://{config.RIOT_API_REGION}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{username}/{tag}"
+                headers = {"X-Riot-Token": config.RIOT_API_KEY}
+                try:
+                    response = await session.get(url, headers=headers)
+                    if response.status == 200:
+                        data = await response.json()
+                        # print(f"Response data: {data}")
+                    else:
+                        responseText = await response.text()
+                        print(f"Failed to fetch data. Status code: {response.status}, Response: responseText, URL: {url}")
+                        error_msg = f"Failed to fetch data. Status code: {response.status}, Response: responseText"
+                        return (False, error_msg)
+
+                except aiohttp.ClientError as e:
+                    print(f"ClientError occurred: {e}")
+
+                return( True, data['puuid'])
+
     @commands.command()
     async def bestgame(self, ctx):
         """
@@ -224,6 +251,30 @@ class RiotAccount(commands.GroupCog, name="riotaccount", description="RiotAccoun
             await interaction.response.send_message(embed=embed)
             # await ctx.message.delete()
 
+    @commands.command(name="fmatch")
+    async def fmatch(self, ctx, username: str, tag: str, num_matches):
+        """
+        Test.
+        """
+        puuidResponse = await self.getPuuid(username, tag)
+        if puuidResponse[0] == False:
+            embed = discord.Embed(
+                description=puuidResponse[1],
+                color = discord.Color(config.Color_Error)
+            )        
+            embed.set_author(name=f"{ctx.guild}: Best Game", icon_url=ctx.guild.icon.url)
+            await ctx.send(embed=embed)
+            await ctx.message.delete()
+            return
+        
+        embed = discord.Embed(
+            description=f"Account {username}#{tag} found. Good job",
+            color = discord.Color(config.Color_Default)
+        )        
+        embed.set_author(name=f"{ctx.guild}: Best Game", icon_url=ctx.guild.icon.url)
+        await ctx.send(embed=embed)
+        await ctx.message.delete()
+    
 
 async def setup(bot):
     await bot.add_cog(RiotAccount(bot))
