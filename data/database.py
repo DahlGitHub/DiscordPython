@@ -1,39 +1,49 @@
 import asyncpg
 import config
+from pathlib import Path
+
+SCHEMA_PATH = Path("data/schema.sql")
 
 class Database:
-    def __init__(self):
-        self.conn = None
+    def __init__(self) -> None:
+        self.pool: asyncpg.Pool | None = None
 
     async def connect(self):
-        self.conn = await asyncpg.connect(config.DATABASE_URL)
-        await self._create_tables()
+        self.pool = await asyncpg.create_pool(
+            dsn=config.DATABASE_URL,
+            min_size=1,
+            max_size=10,
+            max_inactive_connection_lifetime=300,
+            timeout=5
+        )
+        async with self.pool.acquire() as conn:
+            await self._create_tables(conn)
 
-    async def _create_tables(self):
-        with open("data/schema.sql", "r") as f:
-            schema_sql = f.read()
-        statements = [stmt.strip() for stmt in schema_sql.split(';') if stmt.strip()]
+    async def close(self) -> None:
+        if self.pool and not self.pool._closed:
+            await self.pool.close()
+            self.pool = None
+
+    async def _create_tables(self, conn: asyncpg.Connection) -> None:
+        sql = SCHEMA_PATH.read_text(encoding="utf-8")
+        statements = [stmt.strip() for stmt in sql.split(';') if stmt.strip()]
         for stmt in statements:
-            await self.conn.execute(stmt)
+            await conn.execute(stmt)
 
-    async def close(self):
-        if self.conn:
-            await self.conn.close()
-            self.conn = None
+    async def _conn(self) -> asyncpg.Connection:
+        if not self.pool:
+            raise RuntimeError("Database has not been awaited.")
+        return await self.pool.acquire()
 
     async def execute(self, query: str, *args):
-        """Execute any query that doesn't return rows."""
-        return await self.conn.execute(query, *args)
+        return await self.pool.execute(query, *args)
 
     async def fetchrow(self, query: str, *args):
-        """Fetch a single row."""
-        return await self.conn.fetchrow(query, *args)
+        return await self.pool.fetchrow(query, *args)
 
     async def fetch(self, query: str, *args):
-        """Fetch multiple rows."""
-        return await self.conn.fetch(query, *args)
+        return await self.pool.fetch(query, *args)
     
     async def fetchval(self, query: str, *args):
-        """Fetch a single value."""
-        return await self.conn.fetchval(query, *args)
+        return await self.pool.fetchval(query, *args)
 

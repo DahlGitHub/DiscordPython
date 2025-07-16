@@ -163,6 +163,16 @@ async def main():
     await db.connect()
     await cogs()
     await bot.load_extension('jishaku')
-    await bot.start(TOKEN)
+    try:
+        await bot.start(TOKEN)
+    finally:
+        await db.close()
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Shutdown the bot 🔴")
+        sys.exit(0)
 
 asyncio.run( main() )
