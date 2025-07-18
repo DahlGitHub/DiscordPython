@@ -35,9 +35,7 @@ class EmbedBuilder:
 
     def _resolve_icon(self, icon_key):
         if isinstance(icon_key, str):
-            if icon_key.startswith("http"):
-                return icon_key
-            return ICONS.get(icon_key)
+            return ICONS.get(icon_key.lower())
         return None
 
     def author(self, name=None, icon=None):

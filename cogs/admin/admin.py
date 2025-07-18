@@ -34,6 +34,24 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.is_owner()
+    async def setstatus(self, ctx, activity_type: str, *, message: str):
+        
+        activity_map = {
+            "playing": discord.ActivityType.playing,
+            "watching": discord.ActivityType.watching,
+            "listening": discord.ActivityType.listening,
+            "streaming": discord.ActivityType.streaming
+        }
+
+        if activity_type not in activity_map:
+            return await ctx.send("Need an activity type.")
+        
+        activity = discord.Activity(type=activity_map[activity_type.lower()], name=message)
+        await self.bot.change_presence(activity=activity)
+        await ctx.send(f"✅ Status set to: {activity_type.title()} {message}")
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
     async def shutdown(self, ctx):
         """
         Shut downs the bot.
