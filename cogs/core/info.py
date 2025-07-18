@@ -131,7 +131,7 @@ class Info(commands.Cog):
         categories = [category for category in ctx.guild.categories]
 
         embed = discord.Embed(
-            colour=discord.Colour(config.Color_Bot),
+            colour=discord.Colour(config.Color_Default),
             description=(
                 f'{emotes.Server_Owner} **{ctx.guild.owner}** | {ctx.guild.owner.mention} \n'
                 f'\n{emotes.Server_Emoji} **{len(ctx.guild.emojis)}** | {emotes.Server_Roles} **{len(ctx.guild.roles)}**\n'
@@ -240,7 +240,7 @@ class Info(commands.Cog):
         member = ctx.author if not member else member
 
         embed = discord.Embed(color=discord.Colour(config.Color_Default))
-        embed.set_author(name=f"{member.display_name}#{member.discriminator}", icon_url=member.display_avatar)
+        embed.set_author(name=f"{member.display_name}", icon_url=member.display_avatar)
         embed.set_image(url=member.display_avatar)
         
         await ctx.send(embed=embed)

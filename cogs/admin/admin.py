@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 
 import config
+import utils.emotes as emotes
 
 class Admin(commands.Cog):
     """
@@ -17,7 +18,7 @@ class Admin(commands.Cog):
         Disables a given cmd from the help list.
         """
         ctx.bot.get_command(cmd).enabled = False
-        embed = discord.Embed(description=f'{config.Status_Dnd} **{cmd}** has been disabled.', color=discord.Colour(config.Color_Bot))
+        embed = discord.Embed(description=f'{emotes.Status_Dnd} **{cmd}** has been disabled.', color=discord.Colour(config.Color_Default))
         embed.set_author(name='Command Disabled:', icon_url=ctx.guild.icon.url)
         await ctx.send(embed=embed)
 
@@ -28,7 +29,7 @@ class Admin(commands.Cog):
         Enables a given cmd from the help list.
         """
         ctx.bot.get_command(cmd).enabled = True
-        embed = discord.Embed(description=f'{config.Status_Online} **{cmd}** has been enabled.', color=discord.Colour(config.Color_Bot))
+        embed = discord.Embed(description=f'{emotes.Status_Online} **{cmd}** has been enabled.', color=discord.Colour(config.Color_Default))
         embed.set_author(name='Command Enabled:', icon_url=ctx.guild.icon.url)
         await ctx.send(embed=embed)
 
@@ -56,7 +57,7 @@ class Admin(commands.Cog):
         """
         Shut downs the bot.
         """
-        embed = discord.Embed(description=f'{config.Status_Offline} Signing off.', color=discord.Colour(config.Color_Bot))
+        embed = discord.Embed(description=f'{emotes.Status_Offline} Signing off.', color=discord.Colour(config.Color_Default))
         embed.set_author(name='Control Panel', icon_url=ctx.guild.icon.url)
         await ctx.send(embed=embed)
         await ctx.message.delete()
