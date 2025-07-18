@@ -21,7 +21,7 @@ class Help(commands.Cog):
             except AttributeError:
                 owner = "Adrian#4030"
 
-            embed = discord.Embed(description=f'Use `.h <module>` to gain more information about that module ', color=discord.Colour(config.Color_Bot))
+            embed = discord.Embed(description=f'Use `.h <module>` to gain more information about that module ', color=discord.Colour(config.Color_Default))
             embed.set_author(name="Help", icon_url=self.bot.user.display_avatar)
 
             cogs_desc = ''
@@ -47,7 +47,7 @@ class Help(commands.Cog):
 
                 if cog.lower() == params[0].lower():
 
-                    embed = discord.Embed(title=f'{cog} - commands', description=self.bot.cogs[cog].__doc__, color=discord.Colour(config.Color_Bot))
+                    embed = discord.Embed(title=f'{cog} - commands', description=self.bot.cogs[cog].__doc__, color=discord.Colour(config.Color_Default))
                     embed.set_author(name=f"Help {cog}", icon_url=self.bot.user.display_avatar)
                     for command in self.bot.get_cog(cog).get_commands():
               

@@ -1,6 +1,7 @@
 import discord
 from datetime import datetime
 import config  # assumes your color & emoji constants are here
+from .icons import ICONS
 
 class EmbedBuilder:
     """
@@ -33,20 +34,9 @@ class EmbedBuilder:
         return repr(self.embed)
 
     def _resolve_icon(self, icon_key):
-        """
-        Resolves icon keywords like 'user', 'bot', or 'server' to actual avatar/icon URLs.
-        """
         if isinstance(icon_key, str):
-            if icon_key.startswith("http"):
-                return icon_key
-            elif icon_key == "user" and self.ctx:
-                return self.ctx.author.display_avatar.url
-            elif icon_key == "server" and self.ctx and self.ctx.guild and self.ctx.guild.icon:
-                return self.ctx.guild.icon.url
-            elif icon_key == "bot" and self.bot:
-                return self.bot.user.display_avatar.url
+            return ICONS.get(icon_key.lower())
         return None
-    
 
     def author(self, name=None, icon=None):
         if name:

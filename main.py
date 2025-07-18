@@ -1,21 +1,16 @@
 import platform
 import asyncio
-import os
 import importlib
 import sys
+import humanize
 
 import discord
 from discord.ext import commands
-from discord import app_commands
-from utils.embedbuilder import EmbedBuilder
-from data.database import Database
-
 from datetime import datetime, timezone
-from dotenv import load_dotenv
-import humanize
-
 import config
 import utils.emotes as emotes
+from data.database import Database
+import jishaku
 
 from cogs import EXTENSIONS
 
@@ -27,13 +22,15 @@ bot = commands.Bot(
     intents=discord.Intents.all())
 
 TOKEN = config.DISCORD_TOKEN
-os.environ["JISHAKU_NO_UNDERSCORE"] = "True"
+jishaku.Flags.NO_UNDERSCORE = True
+jishaku.Flags.NO_DM_TRACEBACK = True
 
 db = Database()
 bot.db = db
 
 bot.remove_command('help')
 bot.launch_time = datetime.now(timezone.utc)
+recent_cog = None
 
 """
 The following functions below are meant to simple run the bot, and load all the extensions.
@@ -123,7 +120,18 @@ async def unload(ctx, extension: str):
 @bot.command(hidden=True)
 @commands.is_owner()
 async def reload(ctx, extension: str):
+    global recent_cog
     await manage_extension(ctx, "reload", extension)
+    recent_cog = extension
+
+@bot.command(name="r", hidden=True)
+@commands.is_owner()
+async def reload_recent(ctx):
+    global recent_cog
+    if not recent_cog:
+        await ctx.send("No cog was found")
+        return
+    await manage_extension(ctx, "reload", recent_cog)
 
 @bot.command(hidden=True)
 # @commands.is_owner()
@@ -155,6 +163,16 @@ async def main():
     await db.connect()
     await cogs()
     await bot.load_extension('jishaku')
-    await bot.start(TOKEN)
+    try:
+        await bot.start(TOKEN)
+    finally:
+        await db.close()
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Shutdown the bot 🔴")
+        sys.exit(0)
 
 asyncio.run( main() )
