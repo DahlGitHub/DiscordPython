@@ -17,8 +17,9 @@ class ReminderCog(commands.GroupCog, name="reminder", description="Temporary in-
         self.reminders: dict[int, list[tuple[datetime, str, asyncio.Task]]] = {}
 
     @app_commands.command(name="set", description="Set a reminder (max 7 days)")
-    async def set(self, interaction: discord.Interaction, *, text: str):
-        when, message = parse_time_and_message(text)
+    @app_commands.describe(when="When to be reminded of something.")
+    async def set(self, interaction: discord.Interaction, *, when: str):
+        when, message = parse_time_and_message(when)
         if when is None:
             embed = (
                 EmbedBuilder(
@@ -67,16 +68,16 @@ class ReminderCog(commands.GroupCog, name="reminder", description="Temporary in-
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="remove", description="Remove a reminder by its list number")
-    async def remove(self, interaction: discord.Interaction, number: int):
+    async def remove(self, interaction: discord.Interaction, id: int):
         user_rems = self.reminders.get(interaction.user.id, [])
-        if number < 1 or number > len(user_rems):
+        if id < 1 or id > len(user_rems):
             return await interaction.response.send_message("No such reminder.", ephemeral=True)
 
-        when, msg, task = user_rems.pop(number - 1)
+        when, msg, task = user_rems.pop(id - 1)
         task.cancel()
 
         await interaction.response.send_message(
-            f"Removed reminder **#{number}** (<t:{int(when.timestamp())}:R> – {msg}).",
+            f"Removed reminder **#{id}** (<t:{int(when.timestamp())}:R> – {msg}).",
             ephemeral=True,
         )
 
