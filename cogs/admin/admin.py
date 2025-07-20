@@ -37,6 +37,8 @@ class Admin(commands.Cog):
     @commands.is_owner()
     async def setstatus(self, ctx, activity_type: str, *, message: str):
         
+        activity_type = activity_type.lower()
+
         activity_map = {
             "playing": discord.ActivityType.playing,
             "watching": discord.ActivityType.watching,
@@ -47,7 +49,7 @@ class Admin(commands.Cog):
         if activity_type not in activity_map:
             return await ctx.send("Need an activity type.")
         
-        activity = discord.Activity(type=activity_map[activity_type.lower()], name=message)
+        activity = discord.Activity(type=activity_map[activity_type], name=message)
         await self.bot.change_presence(activity=activity)
         await ctx.send(f"✅ Status set to: {activity_type.title()} {message}")
 
