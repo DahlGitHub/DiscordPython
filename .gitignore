@@ -4,5 +4,5 @@ __pycache__/
 
 .env
 settings.json
-archive.py
+test.py
 .idea/
