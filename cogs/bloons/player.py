@@ -1,108 +1,227 @@
+from typing import Tuple, Union
 from datetime import datetime, timedelta, timezone
 from discord.ext import commands
 import aiohttp
 import discord
-from utils.bloons import BLOONS_POPPED, TOWERS_PLACED
+
+from utils.bloons import BLOONS_POPPED, GAMEPLAY
+from utils.embedbuilder import EmbedBuilder
+from utils.types import UserDataResult, EmbedResult
 
 
 class Player(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
 
     @staticmethod
-    async def fetch_user_btd6_data(self, interaction: discord.Interaction, user: discord.User | None = None) -> tuple[discord.User | None, dict | str]:
-        try:
-            await interaction.response.defer(thinking=True)
-        except discord.NotFound:
-            return None, "⚠️ Interaction expired."
-
-        target = user or interaction.user
+    async def fetch_user_btd6_data(db, user: discord.User | None = None) -> UserDataResult:
 
         try:
-            success, data = await Player.get_bloons_key(self, target)
+            success, data = await Player.get_bloons_key(db, user)
         except Exception as e:
-            return None, f"❌ Unexpected error: {e}"
-
+            return (
+                None,
+                EmbedBuilder(description=f"Unexpected error: {e}"), 
+                True
+            )
+        
         if not success:
-            return None, data
-
-        return target, data
+            return (
+                None,
+                EmbedBuilder(description=data), 
+                True
+            )
+        return user, data, False
 
     @staticmethod
-    async def get_bloons_key(self, user: discord.User):
-        row = await self.bot.db.fetchrow("SELECT key, timestamp FROM bloons_key WHERE user_id = $1", user.id)
+    async def get_bloons_key(db, user: discord.User) -> Tuple[bool, Union[dict, str]]:
+        row = await db.fetchrow(
+            "SELECT key, timestamp FROM bloons_key WHERE user_id = $1", user.id
+        )
         if not row:
-            return False, f"❌ No BTD6 key found for {user.mention}."
+            return (
+                False, f"No BTD6 key found for {user.mention}."
+            )
 
         key, timestamp = row["key"], row["timestamp"]
         if timestamp.tzinfo is None:
             timestamp = timestamp.replace(tzinfo=timezone.utc)
 
         if timestamp < datetime.now(timezone.utc) - timedelta(days=90):
-            return False, f"⚠️ The BTD6 key for {user.mention} is expired."
+            return (
+                False, f"⚠️ The BTD6 key for {user.mention} is expired."
+            )
 
         url = f"https://data.ninjakiwi.com/btd6/users/{key}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 if response.status != 200:
-                    return False, "❌ Could not reach BTD6 API."
+                    return (
+                        False, f"Could not reach BTD6 API."
+                    )
 
                 data = await response.json()
                 if not data.get("success"):
-                    return False, "❌ Invalid key or user does not play BTD6."
+                    return (
+                        False, f"Invalid key or user does not play BTD6."
+                    )
 
                 return True, data["body"]
 
     @staticmethod
-    async def bloons_stats(self, interaction: discord.Interaction, user: discord.User | None = None) -> discord.Embed | str:
-        target_user, data = await Player.fetch_user_btd6_data(self, interaction, user)
-        if isinstance(data, str):
-            return data
+    async def bloons_stats(db, user: discord.User | None = None) -> EmbedResult:
+        target_user, data, ephemeral = await Player.fetch_user_btd6_data(db, user)
+        if not isinstance(data, dict):
+            return data, ephemeral
 
-        embed = discord.Embed(color=discord.Color.blue())
-        embed.set_author(name=f"{target_user.display_name}'s BTD6 Profile", icon_url=target_user.display_avatar.url)
-        embed.add_field(name="Name", value=data['displayName'], inline=False)
-        embed.add_field(name="Rank", value=data['rank'], inline=True)
-        embed.add_field(name="Achievements", value=data['achievements'], inline=True)
-        embed.add_field(name="Most Played", value=data['mostExperiencedMonkey'], inline=True)
-        embed.add_field(name="Highest Round", value=data['highestRound'], inline=True)
-        embed.add_field(name="Followers", value=data['followers'], inline=True)
+        embed = EmbedBuilder()
+        embed.author(
+            name=f"{target_user.display_name}'s BTD6 Profile",
+            icon=target_user.display_avatar.url,
+        )
+        embed.field(name="Name", value=data["displayName"], inline=False)
+        embed.field(name="Rank", value=data["rank"], inline=True)
+        embed.field(name="Achievements", value=data["achievements"], inline=True)
+        embed.field(name="Most Played", value=data["mostExperiencedMonkey"], inline=True)
+        embed.field(name="Highest Round", value=data["highestRound"], inline=True)
+        embed.field(name="Followers", value=data["followers"], inline=True)
+        embed.thumbnail(url=data["avatarURL"])
+        embed.image(url=data["bannerURL"])
 
-        if 'avatarURL' in data:
-            embed.set_thumbnail(url=data['avatarURL'])
-        if 'bannerURL' in data:
-            embed.set_image(url=data['bannerURL'])
-
-        return embed
+        return embed, ephemeral
 
     @staticmethod
-    async def bloons_popped(self, interaction: discord.Interaction, user: discord.User | None = None) -> discord.Embed | str:
-        target_user, data = await Player.fetch_user_btd6_data(self, interaction, user)
-        if isinstance(data, str):
-            return data
+    async def bloons_popped(db, user: discord.User | None = None) -> EmbedResult:
+        target_user, data, ephemeral = await Player.fetch_user_btd6_data(db, user)
+
+        if not isinstance(data, dict):
+            return data, ephemeral
 
         bloons = data.get("bloonsPopped", {})
-        embed = discord.Embed(title="Bloons Popped", color=discord.Color.green())
-        embed.set_author(name=f"{target_user.display_name}'s Bloons Stats", icon_url=target_user.display_avatar.url)
+        embed = EmbedBuilder()
+        embed.author(
+            name=f"{target_user.display_name}'s Bloons Popped Stats",
+            icon=target_user.display_avatar.url,
+        )
+        embed.footer(text="Ninjakiwi API", icon="ninjakiwi")
+
+        labels = []
+        values = []
 
         for key, label in BLOONS_POPPED.items():
-            embed.add_field(name=label, value=f"{bloons.get(key, 0):,}", inline=True)
+            labels.append(label)
+            values.append(f"{bloons.get(key, 0):,}")
 
-        return embed
+        embed.field(name="Type", value="\n".join(labels), inline=True)
+        embed.field(name="Popped", value="\n".join(values), inline=True)
+
+        return embed, ephemeral
+
+    @staticmethod
+    async def bloons_towers(db, user: discord.User | None = None) -> EmbedResult:
+        target_user, data, ephemeral = await Player.fetch_user_btd6_data(db, user)
+        if not isinstance(data, dict):
+            return data, ephemeral
+
+        towers = data.get("towersPlaced", {})
+        embed = EmbedBuilder()
+
+        names = []
+        counts = []
+
+        for key, count in towers.items():
+            names.append(key)
+            counts.append(f"{count:,}")
+
+        embed.field(name="Monkey", value="\n".join(names), inline=True)
+        embed.field(name="Placed", value="\n".join(counts), inline=True)
+
+        embed.author(
+            name=f"{target_user.display_name}'s Monkeys Placed",
+            icon=target_user.display_avatar.url,
+        )
+        embed.footer(text="Ninjakiwi API", icon="ninjakiwi")
+
+        return embed, ephemeral
     
     @staticmethod
-    async def bloons_towers(self, interaction: discord.Interaction, user: discord.User | None = None) -> discord.Embed | str:
-        target_user, data = await Player.fetch_user_btd6_data(self, interaction, user)
-        if isinstance(data, str):
-            return data
-        
-        embed = discord.Embed(color=discord.Color.blue())
-        for key, label in TOWERS_PLACED.items():
-            count = data["towersPlaced"].get(key, 0)
-            embed.add_field(name=label, value=f"{count:,}", inline=True)
-        embed.set_author(name=f"{target_user.display_name}'s Tower's Placed", icon_url=target_user.display_avatar.url)
-        
-        return embed
+    async def bloons_heroes(db, user: discord.User | None = None) -> EmbedResult:
+        target_user, data, ephemeral = await Player.fetch_user_btd6_data(db, user)
+        if not isinstance(data, dict):
+            return data, ephemeral
+
+        heroes = data.get("heroesPlaced", {})
+        embed = EmbedBuilder()
+
+        names = []
+        counts = []
+
+        for key, count in heroes.items():
+            names.append(key)
+            counts.append(f"{count:,}")
+
+        embed.field(name="Hero", value="\n".join(names), inline=True)
+        embed.field(name="Placed", value="\n".join(counts), inline=True)
+
+        embed.author(
+            name=f"{target_user.display_name}'s Hero Placed",
+            icon=target_user.display_avatar.url,
+        )
+        embed.footer(text="Ninjakiwi API", icon="ninjakiwi")
+
+        return embed, ephemeral
     
+    @staticmethod
+    async def bloons_medals(db, user: discord.User | None = None) -> EmbedResult:
+        target_user, data, ephemeral = await Player.fetch_user_btd6_data(db, user)
+        if not isinstance(data, dict):
+            return data, ephemeral
+
+        sp_medals = data.get("_medalsSinglePlayer", {})
+        mp_medals = data.get("_medalsMultiplayer", {})
+
+        all_keys = sorted(set(sp_medals) | set(mp_medals))
+
+        names = ""
+        singles = ""
+        multis = ""
+
+        for key in all_keys:
+            names += f"{key}\n"
+            singles += f"{sp_medals.get(key, 0):,}\n"
+            multis += f"{mp_medals.get(key, 0):,}\n"
+
+        embed = (
+            EmbedBuilder()
+            .author(
+                name=f"{target_user.display_name}'s Medals",
+                icon=target_user.display_avatar.url,
+            )
+            .field(name="Mode", value=names.strip(), inline=True)
+            .field(name="Single", value=singles.strip(), inline=True)
+            .field(name="Multi", value=multis.strip(), inline=True)
+        )
+        embed.footer(text="Ninjakiwi API", icon="ninjakiwi")
+
+        return embed, ephemeral
+
+    @staticmethod
+    async def bloons_gameplay(db, user: discord.User | None = None) -> EmbedResult:
+        target_user, data, ephemeral = await Player.fetch_user_btd6_data(db, user)
+        if not isinstance(data, dict):
+            return data, ephemeral
+        
+        embed = EmbedBuilder()
+        for key, label in GAMEPLAY.items():
+            count = data["gameplay"].get(key, 0)
+            embed.field(name=label, value=f"{count:,}", inline=True)
+
+        embed.author(
+            name=f"{target_user.display_name}'s Tower's Placed",
+            icon=target_user.display_avatar.url,
+        )
+        embed.footer(text="Ninjakiwi API", icon="ninjakiwi")
+
+        return embed, ephemeral
+
+
 async def setup(bot):
     await bot.add_cog(Player(bot))

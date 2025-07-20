@@ -33,8 +33,34 @@ class EmbedBuilder:
     def __repr__(self):
         return repr(self.embed)
 
+    @property
+    def description(self):
+        return self.embed.description
+
+    @description.setter
+    def description(self, value):
+        self.embed.description = value
+
+    @property
+    def title(self):
+        return self.embed.title
+
+    @title.setter
+    def title(self, value):
+        self.embed.title = value
+
+    @property
+    def color(self):
+        return self.embed.color
+
+    @color.setter
+    def color(self, value):
+        self.embed.color = value if isinstance(value, discord.Color) else discord.Color(value)
+
     def _resolve_icon(self, icon_key):
         if isinstance(icon_key, str):
+            if icon_key.startswith("http://") or icon_key.startswith("https://"):
+                return icon_key
             return ICONS.get(icon_key.lower())
         return None
 
@@ -59,7 +85,7 @@ class EmbedBuilder:
         return self
 
     def timestamp(self, time=None):
-        self.embed.timestamp = time or datetime.datetime.now()
+        self.embed.timestamp = time or datetime.now()
         return self
 
     def field(self, name=None, value=None, inline=False):

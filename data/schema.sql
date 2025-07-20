@@ -28,5 +28,20 @@ CREATE TABLE IF NOT EXISTS bloons_key (
     user_id BIGINT NOT NULL,
     key TEXT NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
+);
+
+CREATE TABLE IF NOT EXISTS todo (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    message TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS crosspaths (
+    monkey TEXT PRIMARY KEY,
+    top TEXT,
+    mid TEXT,
+    bot TEXT,
+    last_modified_by TEXT,
+    last_modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
