@@ -1,7 +1,7 @@
 from datetime import datetime
 import discord
 from discord.ext import commands
-from utils.bloons import MONKEYS, MONKEY_IMAGES
+from utils.constraints import MONKEYS, MONKEY_IMAGES
 from itertools import product
 from utils.embedbuilder import EmbedBuilder
 from utils.types import EmbedResult

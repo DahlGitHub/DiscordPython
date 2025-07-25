@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import aiohttp
 from discord import app_commands
 from discord.ext import commands
-from utils.bloons import WIKI_MONKEYS, WIKI_HEROES, MONKEY_IMAGES
+from utils.constraints import WIKI_MONKEYS, WIKI_HEROES, MONKEY_IMAGES
 from utils.embedbuilder import EmbedBuilder
 from utils.types import EmbedResult
 

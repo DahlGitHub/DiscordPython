@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from utils.bloons import MONKEYS, WIKI_HEROES, WIKI_MONKEYS
+from utils.constraints import MONKEYS, WIKI_HEROES, WIKI_MONKEYS
 from .crosspath import Crosspath
 from .player import Player
 from .tierlist import Tierlist

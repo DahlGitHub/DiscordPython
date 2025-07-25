@@ -1,6 +1,6 @@
 from discord.ext import commands
 import aiohttp
-from utils.bloons import TIERLIST
+from utils.constraints import TIERLIST
 from utils.embedbuilder import EmbedBuilder
 from utils.types import EmbedResult
 

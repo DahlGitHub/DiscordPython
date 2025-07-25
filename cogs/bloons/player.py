@@ -4,7 +4,7 @@ from discord.ext import commands
 import aiohttp
 import discord
 
-from utils.bloons import BLOONS_POPPED, GAMEPLAY
+from utils.constraints import BLOONS_POPPED, GAMEPLAY
 from utils.embedbuilder import EmbedBuilder
 from utils.types import UserDataResult, EmbedResult
 
