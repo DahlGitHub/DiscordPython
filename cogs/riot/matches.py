@@ -24,6 +24,22 @@ class Matches(commands.GroupCog, name="matches", description="Riot Account Match
             app_commands.Choice(name=queueid, value=queueid)
             for queueid in queueids if current.lower() in queueid.lower()
         ]
+    
+    async def upload_matches(self, puuid: str, matches: List[dict]):
+        """
+        Upload matches to the database.
+        """
+        concat_matches = ''.join([f"('{puuid}', '{id}')," for id in matches]).rstrip(',')
+        dbquery = f"INSERT INTO lol_match_id (puuid, match_id) VALUES {concat_matches} ON CONFLICT (puuid, match_id) DO NOTHING"
+        print(f"DB Query: {dbquery}")
+        
+        try:
+            return (True, await self.bot.db.execute(dbquery))
+        except Exception as e:
+            print(f"Error uploading matches: {e}")
+            return (False, e)
+
+
 
     @app_commands.command(name="matches", description="Get LoL matches for a Riot Account")
     @app_commands.describe(
@@ -128,6 +144,82 @@ class Matches(commands.GroupCog, name="matches", description="Riot Account Match
 
                 embed = discord.Embed(title=f"Matches for {summoner_name}", description=match_list, color=config.Color_Default)
                 await interaction.response.send_message(embed=embed)
+
+
+    @commands.command()
+    # start_time 1755196260 = 14th aug 2025
+    async def get_matches(self, ctx, username: str, tag: str, queueID: str = '900', start_time: str = '1755196260'):
+        """
+        Get recent matches for a League of Legends account after a point in time.
+        """
+        dbquery = "SELECT puuid FROM riot_accounts WHERE username = $1 AND tag = $2"
+        dbresult = await self.bot.db.fetchrow(dbquery, username.lower(), tag.lower())        
+        puuid = dbresult['puuid']
+
+        if not dbresult:
+            embed = discord.Embed(
+                description=f"❌ No account found for `{username}#{tag}` in the database, please add it with command '~save_lol_account [username] [tag]' (without #).",
+                color=discord.Colour(config.Color_Error)
+            )
+            embed.set_author(name="Error:", icon_url=ctx.guild.icon.url)
+            await ctx.send(embed=embed)
+            return
+        
+        # puuid, start_time, end_time, queue_type (normal, ranked, tourney...), start_index, end_index
+        async with aiohttp.ClientSession() as session:
+            url = f"https://{config.RIOT_API_REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={start_time}&queue={queueID}&type=normal"
+            headers = {"X-Riot-Token": config.RIOT_API_KEY}
+            try:
+                response = await session.get(url, headers=headers)
+                # print(f"response: {await response.json()}")
+                if response.status != 200:
+                    embed = discord.Embed(
+                        # description=f"❌ Failed to fetch matches with code '{response.status.status_code}' and message: '{response.status.message}'",
+                        description=f"❌ Failed to fetch matches with code & message'{response.status}'",
+                        color=discord.Colour(config.Color_Error)
+                    )
+                    embed.set_author(name="Error:", icon_url=ctx.guild.icon.url)
+                    await ctx.send(embed=embed)
+                    return
+                
+                data = await response.json()
+                print(f"response data: {data}")
+                matches = data
+
+                if not matches:
+                    embed = discord.Embed(
+                        description="❌ No matches found for the specified criteria.",
+                        color=discord.Colour(config.Color_Error)
+                    )
+                    embed.set_author(name="Error:", icon_url=ctx.guild.icon.url)
+                    await ctx.send(embed=embed)
+                    return
+
+                upload_result = await self.upload_matches(puuid, matches)
+                if not upload_result[0]: #------------- Upload could still fail, this just a naive check --------------------------
+                    embed = discord.Embed(
+                        description=f"❌ Failed to upload matches for `{username}#{tag}` to the database. Error: {upload_result[1]}",
+                        color=discord.Colour(config.Color_Error)
+                    )
+                    embed.set_author(name="Error:", icon_url=ctx.guild.icon.url)
+                    await ctx.send(embed=embed)
+                    return
+
+                embed = discord.Embed(
+                    description=f"Recent matches for `{username}#{tag}` in `{queueID}` after {start_time}: \n" + "\n".join(matches),
+                    color=discord.Colour(config.Color_Default)
+
+                )
+                embed.set_author(name="Success:", icon_url=ctx.guild.icon.url)
+                await ctx.send(embed=embed)
+
+            except aiohttp.ClientError as e:
+                embed = discord.Embed(
+                    description=f"❌ Failed to fetch matches: {str(e)}",
+                    color=discord.Colour(config.Color_Error)
+                )
+                embed.set_author(name="Error:", icon_url=ctx.guild.icon.url)
+                await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Matches(bot))
