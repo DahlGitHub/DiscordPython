@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 import random
+import json
 
 load_dotenv()
 
@@ -31,3 +32,9 @@ Error_Log_Channel_ID = 1388313577257042153  # Replace with your dev/log channel'
 RIOT_API_KEY = os.getenv('riot_api_key')
 RIOT_API_REGION = os.getenv('riot_api_region')
 RIOT_API_SERVER_EUW = os.getenv('riot_api_server_euwx')
+
+with open("json/gservice.json", "r") as f:
+    GSERVICE = json.load(f)
+
+GSPREAD_TEST = "https://docs.google.com/spreadsheets/d/1xBp5lE0r9Rf96qcbyaFcxixF2Wytclc8TtnIRFS1acg/edit?gid=0#gid=0" # Testing Sheet
+GSPREAD_COBBLEMON = "https://docs.google.com/spreadsheets/d/1HRkD12dMLytrjx0mMWIPtu3lzY5j0Mi1_1SgRHW9zDM/edit?gid=369534627#gid=369534627"

@@ -1,3 +1,4 @@
+import discord
 BLOONS_POPPED = {
     "badsPopped": "B.A.Ds",
     "ddtsPopped": "DDTs",
@@ -41,13 +42,10 @@ GAMEPLAY = {
     "monkeysPlaced": "Monkeys Placed",
 }
 
-
-# Constants for upgrade limits
 MAX_PRIMARY = 5
 MAX_SECONDARY = 2
 MAX_PATHS = 3
 
-# Default crosspaths per primary path slot
 DEFAULT_CROSSPATHS = [(5, 0, 0), (0, 5, 0), (0, 0, 5)]
 
 MONKEYS = {
@@ -221,21 +219,6 @@ TIERLIST = [
     'https://www.reddit.com/r/btd6/comments/1m0qhyi/comprenehsive_tier_list_for_chimps_by_path/', # 49.0
 ]
 
-BLOONS = [
-    {"Name": "Red Bloon",     "Health": 1,  "RBE": 1,   "Speed": 25.0, "Immunity": ""},
-    {"Name": "Blue Bloon",    "Health": 1,  "RBE": 2,   "Speed": 35.0, "Immunity": ""},
-    {"Name": "Green Bloon",   "Health": 1,  "RBE": 3,   "Speed": 45.0, "Immunity": ""},
-    {"Name": "Yellow Bloon",  "Health": 1,  "RBE": 4,   "Speed": 80.0, "Immunity": ""},
-    {"Name": "Pink Bloon",    "Health": 1,  "RBE": 5,   "Speed": 87.5, "Immunity": ""},
-    {"Name": "Black Bloon",   "Health": 1,  "RBE": 11,  "Speed": 45.0, "Immunity": "Explosion"},
-    {"Name": "Purple Bloon",  "Health": 1,  "RBE": 11,  "Speed": 75.0, "Immunity": "Energy, Plasma, Fire, Frigid"},
-    {"Name": "White Bloon",   "Health": 1,  "RBE": 11,  "Speed": 50.0, "Immunity": "Cold, Glacier, Frigid"},
-    {"Name": "Lead Bloon",    "Health": 1,  "RBE": 23,  "Speed": 25.0, "Immunity": "Sharp, Shatter, Cold, Energy"},
-    {"Name": "Zebra Bloon",   "Health": 1,  "RBE": 23,  "Speed": 45.0, "Immunity": "Explosion, Cold, Glacier, Frigid"},
-    {"Name": "Rainbow Bloon", "Health": 1,  "RBE": 47,  "Speed": 55.0, "Immunity": ""},
-    {"Name": "Ceramic Bloon", "Health": 10, "RBE": 104, "Speed": 62.5, "Immunity": ""},
-]
-
 WIKI_MONKEYS = {
     "Dart Monkey": "https://pastebin.com/raw/FK4a9ZSi",
     "Boomerang Monkey": "https://pastebin.com/raw/W2x9dvPs",
@@ -328,4 +311,98 @@ MONKEY_IMAGES = {
     "Geraldo": "https://static.wikia.nocookie.net/b__/images/9/99/GeraldoPortrait.png/revision/latest/scale-to-width-down/1000?cb=20220413053005&path-prefix=bloons",
     "Corvus": "https://static.wikia.nocookie.net/b__/images/e/e6/CorvusPortrait.png/revision/latest/scale-to-width-down/1000?cb=20231206075315&path-prefix=bloons",
     "Rosalia": "https://static.wikia.nocookie.net/b__/images/6/6c/RosaliaPortrait.png/revision/latest/scale-to-width-down/1000?cb=20240529062931&path-prefix=bloons",
+}
+
+GEN_NAME_MAP = {
+    "1": "I. Kanto",
+    "2": "II. Johto",
+    "3": "III. Hoenn",
+    "4": "IV. Sinnoh",
+    "5": "V. Unova",
+    "6": "VI. Kalos",
+    "7": "VII. Alola",
+    "8": "VIII. Galar & Hisui",
+    "9": "IX. Paldea",
+}
+
+OFFICIAL_TOTALS = {
+    "1": 151,
+    "2": 100,
+    "3": 135,
+    "4": 107,
+    "5": 156,
+    "6": 72,
+    "7": 88,
+    "8": 96,
+    "9": 120,
+}
+
+REGIONAL_TOTALS = {
+    "7": (14, 18),  # Alola regionals
+    "8": (21, 35),  # Galar & Hisui regionals
+    "9": (4, 4),    # Paldea regionals
+}
+
+TYPE_EMOJIS = {
+    "normal": "<:normal:1397616201676619856>",
+    "fire": "<:fire:1397616182499999814>",
+    "water": "<:water:1397616180956762195>",
+    "electric": "<:electric:1397616177630543882>",
+    "grass": "<:grass:1397616179174183105>",
+    "ice": "<:ice:1397616174195413032>",
+    "fighting": "<:fighting:1397616297495367800>",
+    "poison": "<:poison:1397616348951089314>",
+    "ground": "<:ground:1397616194181402778>",
+    "flying": "<:flying:1397616197888901150>",
+    "psychic": "<:psychic:1397616175931854979>",
+    "bug": "<:bug:1397616188540059820>",
+    "rock": "<:rock:1397616192683901009>",
+    "ghost": "<:ghost:1397616275705958453>",
+    "dragon": "<:dragon:1397616172299583568>",
+    "dark": "<:dark:1397616170105966696>",
+    "steel": "<:steel:1397616184379048067>",
+    "fairy": "<:fairy:1397616168461795419>",
+}
+
+TYPE_COLORS = {
+    "normal": discord.Color.from_rgb(168, 168, 120),
+    "fire": discord.Color.from_rgb(240, 128, 48),
+    "water": discord.Color.from_rgb(104, 144, 240),
+    "electric": discord.Color.from_rgb(248, 208, 48),
+    "grass": discord.Color.from_rgb(120, 200, 80),
+    "ice": discord.Color.from_rgb(152, 216, 216),
+    "fighting": discord.Color.from_rgb(192, 48, 40),
+    "poison": discord.Color.from_rgb(160, 64, 160),
+    "ground": discord.Color.from_rgb(224, 192, 104),
+    "flying": discord.Color.from_rgb(168, 144, 240),
+    "psychic": discord.Color.from_rgb(248, 88, 136),
+    "bug": discord.Color.from_rgb(168, 184, 32),
+    "rock": discord.Color.from_rgb(184, 160, 56),
+    "ghost": discord.Color.from_rgb(112, 88, 152),
+    "dragon": discord.Color.from_rgb(112, 56, 248),
+    "dark": discord.Color.from_rgb(112, 88, 72),
+    "steel": discord.Color.from_rgb(184, 184, 208),
+    "fairy": discord.Color.from_rgb(238, 153, 172),
+}
+
+TYPE_EFFECTIVENESS = {
+    "normal":     {"fighting": 2},
+    "fire":       {"water": 2, "ground": 2, "rock": 2, "fire": 0.5, "grass": 0.5, "ice": 0.5, "bug": 0.5, "steel": 0.5, "fairy": 0.5},
+    "water":      {"electric": 2, "grass": 2, "fire": 0.5, "water": 0.5, "ice": 0.5, "steel": 0.5},
+    "electric":   {"ground": 2, "electric": 0.5, "flying": 0.5, "steel": 0.5},
+    "grass":      {"fire": 2, "ice": 2, "poison": 2, "flying": 2, "bug": 2, "water": 0.5, "electric": 0.5, "grass": 0.5, "ground": 0.5},
+    "ice":        {"fire": 2, "fighting": 2, "rock": 2, "steel": 2, "ice": 0.5},
+    "fighting":   {"flying": 2, "psychic": 2, "fairy": 2, "bug": 0.5, "rock": 0.5, "dark": 0.5},
+    "poison":     {"ground": 2, "psychic": 2, "fighting": 0.5, "poison": 0.5, "bug": 0.5, "grass": 0.5, "fairy": 0.5},
+    "ground":     {"water": 2, "ice": 2, "grass": 2, "poison": 0.5, "rock": 0.5},
+    "flying":     {"electric": 2, "ice": 2, "rock": 2, "grass": 0.5, "fighting": 0.5, "bug": 0.5},
+    "psychic":    {"bug": 2, "ghost": 2, "dark": 2, "fighting": 0.5, "psychic": 0.5},
+    "bug":        {"fire": 2, "flying": 2, "rock": 2, "grass": 0.5, "fighting": 0.5, "ground": 0.5},
+    "rock":       {"water": 2, "grass": 2, "fighting": 2, "ground": 2, "steel": 2, "normal": 0.5, "fire": 0.5, "poison": 0.5, "flying": 0.5},
+    "ghost":      {"ghost": 2, "dark": 2, "poison": 0.5, "bug": 0.5, "normal": 0, "fighting": 0},
+    "dragon":     {"ice": 2, "dragon": 2, "fairy": 2, "fire": 0.5, "water": 0.5, "electric": 0.5, "grass": 0.5},
+    "dark":       {"fighting": 2, "bug": 2, "fairy": 2, "ghost": 0.5, "dark": 0.5, "psychic": 0},
+    "steel":      {"fire": 2, "fighting": 2, "ground": 2, "normal": 0.5, "grass": 0.5, "ice": 0.5, "flying": 0.5,
+                   "psychic": 0.5, "bug": 0.5, "rock": 0.5, "dragon": 0.5, "steel": 0.5, "fairy": 0.5, "poison": 0},
+    "fairy":      {"poison": 2, "steel": 2, "fighting": 0.5, "bug": 0.5, "dark": 0.5, "dragon": 0},
 }
