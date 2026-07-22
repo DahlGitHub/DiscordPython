@@ -11,6 +11,7 @@ import config
 import utils.emotes as emotes
 from data.database import Database
 import jishaku
+from pathlib import Path
 
 from cogs import EXTENSIONS
 
@@ -91,18 +92,164 @@ async def manage_extension(ctx, action: str, extension: str):
 
     if not extension.startswith("cogs."):
         extension = f"cogs.{extension}"
-    try:
-        method = getattr(ctx.bot, f"{action}_extension")
-        await method(extension)
-        embed = discord.Embed(
-            description=f'{emotes.Check} `{extension}` extension has been {action}ed.',
-            color=config.Color_Default)
-    except Exception as e:
-        embed = discord.Embed(
-            description=f"{emotes.Cross} Failed to {action} extension `{extension}`:\n{e}",
-            color=config.Color_Error)
 
-    embed.set_author(name="Cogs Handler:", icon_url=bot.user.display_avatar.url)
+    exact_match = extension in ctx.bot.extensions
+
+
+    loaded_category_matches = [
+        ext
+        for ext in ctx.bot.extensions
+        if ext.startswith(f"{extension}.")
+    ]
+
+    category_path = Path(*extension.split("."))
+
+  
+    is_category = category_path.is_dir()
+
+    succeeded = []
+    failed = []
+
+
+    if action == "load" and is_category and not exact_match:
+
+        category_extensions = []
+
+        for file in sorted(category_path.glob("*.py")):
+            if file.name == "__init__.py":
+                continue
+
+            ext = ".".join(file.with_suffix("").parts)
+
+            if ext not in ctx.bot.extensions:
+                category_extensions.append(ext)
+
+        if not category_extensions:
+            embed = discord.Embed(
+                description=(
+                    f"{emotes.Cross} No unloaded extensions found "
+                    f"in `{extension}`."
+                ),
+                color=config.Color_Error
+            )
+
+        else:
+            for ext in category_extensions:
+                try:
+                    await ctx.bot.load_extension(ext)
+                    succeeded.append(ext)
+
+                except Exception as e:
+                    failed.append((ext, str(e)))
+
+            description = ""
+
+            if succeeded:
+                description += (
+                    f"{emotes.Check} **Loaded {len(succeeded)} extensions:**\n"
+                    + "\n".join(f"`{ext}`" for ext in succeeded)
+                )
+
+            if failed:
+                description += (
+                    f"\n\n{emotes.Cross} **Failed:**\n"
+                    + "\n".join(
+                        f"`{ext}`: {error}"
+                        for ext, error in failed
+                    )
+                )
+
+            embed = discord.Embed(
+                description=description,
+                color=(
+                    config.Color_Default
+                    if not failed
+                    else config.Color_Error
+                )
+            )
+
+    elif (
+        action in ("unload", "reload")
+        and not exact_match
+        and loaded_category_matches
+    ):
+
+        targets = list(loaded_category_matches)
+
+        if action == "unload":
+            targets.reverse()
+
+        for ext in targets:
+            try:
+                method = getattr(
+                    ctx.bot,
+                    f"{action}_extension"
+                )
+
+                await method(ext)
+                succeeded.append(ext)
+
+            except Exception as e:
+                failed.append((ext, str(e)))
+
+        description = ""
+
+        if succeeded:
+            description += (
+                f"{emotes.Check} "
+                f"**{action.title()}ed {len(succeeded)} extensions:**\n"
+                + "\n".join(f"`{ext}`" for ext in succeeded)
+            )
+
+        if failed:
+            description += (
+                f"\n\n{emotes.Cross} **Failed:**\n"
+                + "\n".join(
+                    f"`{ext}`: {error}"
+                    for ext, error in failed
+                )
+            )
+
+        embed = discord.Embed(
+            description=description,
+            color=(
+                config.Color_Default
+                if not failed
+                else config.Color_Error
+            )
+        )
+
+    else:
+        try:
+            method = getattr(
+                ctx.bot,
+                f"{action}_extension"
+            )
+
+            await method(extension)
+
+            embed = discord.Embed(
+                description=(
+                    f"{emotes.Check} `{extension}` extension "
+                    f"has been {action}ed."
+                ),
+                color=config.Color_Default
+            )
+
+        except Exception as e:
+            embed = discord.Embed(
+                description=(
+                    f"{emotes.Cross} Failed to {action} extension "
+                    f"`{extension}`:\n{e}"
+                ),
+                color=config.Color_Error
+            )
+
+    embed.set_author(
+        name="Cogs Handler:",
+        icon_url=ctx.bot.user.display_avatar.url
+    )
+
     await ctx.send(embed=embed)
     await ctx.message.delete()
 
@@ -134,15 +281,54 @@ async def reload_recent(ctx):
     await manage_extension(ctx, "reload", recent_cog)
 
 @bot.command(hidden=True)
-# @commands.is_owner()
+@commands.is_owner()
 async def extensions(ctx):
-    loaded = list(bot.extensions.keys())
-    if not loaded:
-        desc = "No extensions currently loaded."
+    loaded = set(bot.extensions.keys())
+
+    cogs_path = Path("cogs")
+
+    available = set()
+
+    for file in cogs_path.rglob("*.py"):
+        if file.name == "__init__.py":
+            continue
+
+        extension = ".".join(file.with_suffix("").parts)
+        available.add(extension)
+
+    unloaded = available - loaded
+
+    if loaded:
+        loaded_desc = "\n".join(
+            f"- `{ext}`"
+            for ext in sorted(loaded)
+        )
     else:
-        desc = "\n".join(f"- `{ext}`" for ext in loaded)
-    embed = discord.Embed(description=f"**Loaded extensions:**\n{desc}", color=config.Color_Default)
-    embed.set_author(name="Cogs Handler:", icon_url=bot.user.display_avatar.url)
+        loaded_desc = "None."
+
+    if unloaded:
+        unloaded_desc = "\n".join(
+            f"- `{ext}`"
+            for ext in sorted(unloaded)
+        )
+    else:
+        unloaded_desc = "None."
+
+    embed = discord.Embed(
+        description=(
+            f"**Loaded extensions:**\n"
+            f"{loaded_desc}\n\n"
+            f"**Unloaded extensions:**\n"
+            f"{unloaded_desc}"
+        ),
+        color=config.Color_Default
+    )
+
+    embed.set_author(
+        name="Cogs Handler:",
+        icon_url=bot.user.display_avatar.url
+    )
+
     await ctx.send(embed=embed)
     await ctx.message.delete()
 
@@ -158,6 +344,54 @@ async def on_ready():
     print(f'Status: {bot.user} is online, {datetime.now()}.')
     print(f"discord.py API version: {discord.__version__}")
     print(f"Python version: {platform.python_version()}")
+
+async def cogs():
+    """
+    Load every extension inside the enabled startup categories.
+
+    Example:
+        cogs.bloons
+
+    Loads:
+        cogs.bloons.bloons
+        cogs.bloons.crosspath
+        cogs.bloons.player
+        cogs.bloons.tierlist
+        cogs.bloons.wiki
+    """
+
+    loaded = []
+    failed = []
+
+    for category in config.SETUP_CATEGORIES:
+        category_path = Path(*category.split("."))
+
+        if not category_path.exists():
+            print(f"Category not found: {category}")
+            continue
+
+        for file in sorted(category_path.glob("*.py")):
+            if file.name == "__init__.py":
+                continue
+
+            extension = ".".join(file.with_suffix("").parts)
+
+            try:
+                await bot.load_extension(extension)
+
+                loaded.append(extension)
+                print(f"Loaded: {extension}")
+
+            except Exception as e:
+                failed.append(extension)
+
+                print(f"Failed to load: {extension}")
+                print(f"Reason: {e}")
+
+    print(f"Startup extensions loaded: {len(loaded)}")
+
+    if failed:
+        print(f"Startup extensions failed: {len(failed)}")
 
 async def main():
     await db.connect()
