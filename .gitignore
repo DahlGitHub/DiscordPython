@@ -8,3 +8,5 @@ test.py
 .idea/
 
 gservice.json
+data/league_patches.json
+bot.log
