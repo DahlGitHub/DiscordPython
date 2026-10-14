@@ -32,11 +32,12 @@ class Embedfix(commands.GroupCog, name="embedfix"):
                 "example": "https://www.reddit.com/r/example/comments/example/",
             },
             "twitter": {
-                "pattern": re.compile(r"https?://(?:www\.)?twitter\.com/\S+"),
-                "replace_pattern": re.compile(r"(https?://(?:www\.)?)twitter\.com"),
+                "pattern": re.compile(r"https?://(?:www\.)?x\.com/\S+"),
+                "replace_pattern": re.compile(r"(https?://(?:www\.)?)x\.com"),
                 "default_replacement": "https://vxtwitter.com",
-                "example": "https://twitter.com/example/status/123456789",
+                "example": "https://x.com/example/status/123456789",
             },
+
         }
 
         self.active_channels = {
