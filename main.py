@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 import config
 import utils.emotes as emotes
 from data.database import Database
+from data.asqlite import SQLite
 import jishaku
 from pathlib import Path
 
@@ -28,6 +29,8 @@ jishaku.Flags.NO_DM_TRACEBACK = True
 
 db = Database()
 bot.db = db
+sqlite = SQLite()
+bot.sqlite = sqlite
 
 bot.remove_command('help')
 bot.launch_time = datetime.now(timezone.utc)
@@ -394,12 +397,19 @@ async def cogs():
         print(f"Startup extensions failed: {len(failed)}")
 
 async def main():
-    await db.connect()
-    await cogs()
-    await bot.load_extension('jishaku')
     try:
+        await sqlite.connect()
+        try:
+            await db.connect()
+        except Exception:
+            await db.close()
+            print("Supabase is unavailable. Starting with local asqlite storage.")
+
+        await cogs()
+        await bot.load_extension('jishaku')
         await bot.start(TOKEN)
     finally:
+        await sqlite.close()
         await db.close()
 
 if __name__ == "__main__":
@@ -408,5 +418,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Shutdown the bot 🔴")
         sys.exit(0)
-
-asyncio.run( main() )

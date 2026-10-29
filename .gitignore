@@ -9,4 +9,7 @@ test.py
 
 gservice.json
 data/league_patches.json
+data/*.db
+data/*.db-wal
+data/*.db-shm
 bot.log
