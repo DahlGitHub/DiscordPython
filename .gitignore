@@ -1,8 +1,11 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.tmp
+tests/
 
 .env
+.venv/
 settings.json
 test.py
 .idea/
