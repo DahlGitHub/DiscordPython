@@ -19,3 +19,23 @@ CREATE TABLE IF NOT EXISTS embedfix_channels (
 );
 
 PRAGMA foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS steam_users (
+    guild_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    steam_id TEXT NOT NULL,
+    wishlist TEXT NOT NULL DEFAULT '[]',
+    PRIMARY KEY (guild_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS steam_channels (
+    guild_id INTEGER PRIMARY KEY,
+    channel_id INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS steam_games (
+    guild_id INTEGER NOT NULL,
+    app_id INTEGER NOT NULL,
+    state TEXT NOT NULL,
+    PRIMARY KEY (guild_id, app_id)
+);

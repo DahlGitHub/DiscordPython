@@ -21,6 +21,8 @@ class ErrorHandler(commands.Cog):
         tree.on_error = self._old_tree_error
 
     async def tree_on_error(self, interaction: Interaction, error: app_commands.AppCommandError):
+        if interaction.extras.get('command_error_handled'):
+            return
         # Ignore commands it doesn't know, including slash commands.
         if isinstance(error, app_commands.errors.CommandNotFound):
             return
