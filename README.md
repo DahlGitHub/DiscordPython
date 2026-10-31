@@ -25,39 +25,18 @@ python -m venv .venv
 Use `.venv\Scripts\python.exe` as the Python interpreter in your IDE.
 This keeps the bot's dependencies separate from your other Python projects.
 
+Slash commands sync automatically for each server on startup, when joining a server,
+and after owner cog load, reload, or unload commands. The admin `sync` command is still available.
+
 
 Functionality
 ----
-Description coming..
 
-- Riot..
-- Ninjakiwi..
-- Canvas..
-- More soon..
-- Useful utility functions
-
-## Steam wishlist alerts
-
-Set `steam_api_key=YOUR_KEY` in `.env` to resolve custom Steam profile names.
-Numeric SteamID64 registrations do not require a key. Set `steam_country=NO`
-for Norwegian store prices (the default), or another two-letter store country.
-Only Steam API endpoints are used; users must expose a public wishlist.
-
-Steam uses slash commands (sync the command tree after loading the extension):
-
-- `/steam add <SteamID64 or profile URL> [@member]`: register yourself or another member.
-- `/steam remove [@member]`: remove a registration.
-- `/steam users`: list registered members.
-- `/steam wishlist [@member]`: browse a registered member's live wishlist with prices and release dates.
-- `/steam setchannel #channel`: enable daily sale/release alerts for this server.
-- `/steam check`: check immediately.
-- `/steam disable`: stop alerts without deleting registrations.
-
-Manage Server is required to manage another member or configure/run alerts.
-Each game gets one post listing interested members, without pinging them.
-The first check posts current sales and establishes a release baseline.
-Later checks post new sales, further price drops, release-date changes, and
-transitions from coming soon to available. State persists in SQLite across restarts.
-No notifications are posted for historical releases on the first check.
-Wishlist/store endpoints may change; unavailable data is retried rather than
-treated as an empty wishlist. A confirmed empty `items` array is accepted.
+- **Steam:** Wishlist browsing, sale/release alerts, free-to-keep offers, and free weekends.
+- **Riot / League of Legends:** Saved accounts, ranked stats, and patch notifications.
+- **Ninja Kiwi / BTD6:** Player stats, recommended crosspaths, tier lists, and tower/hero references.
+- **Canvas:** Courses, assignments, course subscriptions, and deadline reminders.
+- **Cobblemon:** Pokédex lookups, types, moves, and spawn locations.
+- **Minecraft:** CurseForge mod information.
+- **Utilities:** Personal to-do lists, temporary reminders, and configurable link embed fixes.
+- **Administration:** Server/user info, bot controls, and cog loading remembered in SQLite.
