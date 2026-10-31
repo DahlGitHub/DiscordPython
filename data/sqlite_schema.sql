@@ -4,6 +4,10 @@ CREATE TABLE IF NOT EXISTS league_patches (
     last_patch_url TEXT
 );
 
+CREATE TABLE IF NOT EXISTS enabled_extensions (
+    extension TEXT PRIMARY KEY
+);
+
 CREATE TABLE IF NOT EXISTS steam_promo_channels (
     guild_id INTEGER NOT NULL,
     kind TEXT NOT NULL,

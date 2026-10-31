@@ -14,7 +14,7 @@ from data.asqlite import SQLite
 import jishaku
 from pathlib import Path
 
-from cogs import EXTENSIONS
+from utils.extensions import ExtensionManager
 
 bot = commands.Bot(
     command_prefix=commands.when_mentioned_or(config.PREFIX), 
@@ -31,6 +31,7 @@ db = Database()
 bot.db = db
 sqlite = SQLite()
 bot.sqlite = sqlite
+extension_manager = ExtensionManager(bot, sqlite)
 
 bot.remove_command('help')
 bot.launch_time = datetime.now(timezone.utc)
@@ -41,19 +42,6 @@ The following functions below are meant to simple run the bot, and load all the 
 
 """
 
-async def cogs():
-    """
-    This code is executed whenever the main.py is launched, loading all the following /cogs/__.py files.
-    """
-    for extension in EXTENSIONS:
-        try:
-            await bot.load_extension(extension)
-            print(f"✅ Loaded extension: {extension}")
-        except Exception as e:
-            print(f"❌ Failed to load extension {extension}: {e}")
-    
-
-# Utilizing discord.Embed in main.py to keep it seperate from custom EmbedBuilder.
 @bot.command()
 @commands.is_owner()
 async def uptime(ctx):
@@ -91,172 +79,46 @@ async def reloadutils(ctx, module_name: str):
 
 
 async def manage_extension(ctx, action: str, extension: str):
-    extension = extension.strip().lower()
-
-    if not extension.startswith("cogs."):
-        extension = f"cogs.{extension}"
-
-    exact_match = extension in ctx.bot.extensions
-
-
-    loaded_category_matches = [
-        ext
-        for ext in ctx.bot.extensions
-        if ext.startswith(f"{extension}.")
-    ]
-
-    category_path = Path(*extension.split("."))
-
-  
-    is_category = category_path.is_dir()
-
-    succeeded = []
-    failed = []
-
-
-    if action == "load" and is_category and not exact_match:
-
-        category_extensions = []
-
-        for file in sorted(category_path.glob("*.py")):
-            if file.name == "__init__.py":
-                continue
-
-            ext = ".".join(file.with_suffix("").parts)
-
-            if ext not in ctx.bot.extensions:
-                category_extensions.append(ext)
-
-        if not category_extensions:
-            embed = discord.Embed(
-                description=(
-                    f"{emotes.Cross} No unloaded extensions found "
-                    f"in `{extension}`."
-                ),
-                color=config.Color_Error
-            )
-
-        else:
-            for ext in category_extensions:
-                try:
-                    await ctx.bot.load_extension(ext)
-                    succeeded.append(ext)
-
-                except Exception as e:
-                    failed.append((ext, str(e)))
-
-            description = ""
-
-            if succeeded:
-                description += (
-                    f"{emotes.Check} **Loaded {len(succeeded)} extensions:**\n"
-                    + "\n".join(f"`{ext}`" for ext in succeeded)
-                )
-
-            if failed:
-                description += (
-                    f"\n\n{emotes.Cross} **Failed:**\n"
-                    + "\n".join(
-                        f"`{ext}`: {error}"
-                        for ext, error in failed
-                    )
-                )
-
-            embed = discord.Embed(
-                description=description,
-                color=(
-                    config.Color_Default
-                    if not failed
-                    else config.Color_Error
-                )
-            )
-
-    elif (
-        action in ("unload", "reload")
-        and not exact_match
-        and loaded_category_matches
-    ):
-
-        targets = list(loaded_category_matches)
-
-        if action == "unload":
-            targets.reverse()
-
-        for ext in targets:
-            try:
-                method = getattr(
-                    ctx.bot,
-                    f"{action}_extension"
-                )
-
-                await method(ext)
-                succeeded.append(ext)
-
-            except Exception as e:
-                failed.append((ext, str(e)))
-
-        description = ""
-
-        if succeeded:
-            description += (
-                f"{emotes.Check} "
-                f"**{action.title()}ed {len(succeeded)} extensions:**\n"
-                + "\n".join(f"`{ext}`" for ext in succeeded)
-            )
-
-        if failed:
-            description += (
-                f"\n\n{emotes.Cross} **Failed:**\n"
-                + "\n".join(
-                    f"`{ext}`: {error}"
-                    for ext, error in failed
-                )
-            )
-
-        embed = discord.Embed(
-            description=description,
-            color=(
-                config.Color_Default
-                if not failed
-                else config.Color_Error
-            )
-        )
-
-    else:
-        try:
-            method = getattr(
-                ctx.bot,
-                f"{action}_extension"
-            )
-
-            await method(extension)
-
-            embed = discord.Embed(
-                description=(
-                    f"{emotes.Check} `{extension}` extension "
-                    f"has been {action}ed."
-                ),
-                color=config.Color_Default
-            )
-
-        except Exception as e:
-            embed = discord.Embed(
-                description=(
-                    f"{emotes.Cross} Failed to {action} extension "
-                    f"`{extension}`:\n{e}"
-                ),
-                color=config.Color_Error
-            )
-
-    embed.set_author(
-        name="Cogs Handler:",
-        icon_url=ctx.bot.user.display_avatar.url
+    name = extension.strip().lower()
+    root = Path(__file__).resolve().parent
+    available = sorted(
+        '.'.join(file.relative_to(root).with_suffix('').parts)
+        for file in (root / 'cogs').rglob('*.py') if file.name != '__init__.py'
     )
-
-    await ctx.send(embed=embed)
+    saved = await extension_manager.saved()
+    if name == 'all':
+        targets = available if action == 'load' else list(dict.fromkeys([*saved, *ctx.bot.extensions]))
+        if action == 'reload':
+            targets = list(ctx.bot.extensions)
+    else:
+        name = name if name.startswith('cogs.') or name == 'jishaku' else f'cogs.{name}'
+        known = list(dict.fromkeys([*available, *saved, *ctx.bot.extensions]))
+        targets = [name] if name in known else [ext for ext in known if ext.startswith(name + '.')]
+        if action == 'reload':
+            targets = [ext for ext in targets if ext in ctx.bot.extensions]
+    if action == 'unload':
+        targets = list(reversed(targets))
+    results = []
+    for target in targets:
+        try:
+            await extension_manager.apply(action, target)
+            results.append(f'{emotes.Check} `{target}`: {action} successful.')
+        except Exception as exc:
+            results.append(f'{emotes.Cross} `{target}`: {exc}')
+    if not results:
+        results = ['No matching extensions found.']
+    text = '\n'.join(results)
+    while text:
+        split = text.rfind('\n', 0, 3800) if len(text) > 3800 else len(text)
+        if split <= 0:
+            split = min(len(text), 3800)
+        embed = discord.Embed(description=text[:split], color=config.Color_Default)
+        embed.set_author(name='Cogs Handler:', icon_url=ctx.bot.user.display_avatar.url)
+        await ctx.send(embed=embed)
+        text = text[split:].lstrip('\n')
     await ctx.message.delete()
 
-        
+
 @bot.command(hidden=True)
 @commands.is_owner()
 async def load(ctx, extension: str):
@@ -349,52 +211,14 @@ async def on_ready():
     print(f"Python version: {platform.python_version()}")
 
 async def cogs():
-    """
-    Load every extension inside the enabled startup categories.
+    """Restore only extensions explicitly enabled through the owner commands."""
+    for extension in await extension_manager.saved():
+        try:
+            await bot.load_extension(extension)
+            print(f'Loaded saved extension: {extension}')
+        except Exception as exc:
+            print(f'Failed to load saved extension {extension}: {exc}')
 
-    Example:
-        cogs.bloons
-
-    Loads:
-        cogs.bloons.bloons
-        cogs.bloons.crosspath
-        cogs.bloons.player
-        cogs.bloons.tierlist
-        cogs.bloons.wiki
-    """
-
-    loaded = []
-    failed = []
-
-    for category in config.SETUP_CATEGORIES:
-        category_path = Path(*category.split("."))
-
-        if not category_path.exists():
-            print(f"Category not found: {category}")
-            continue
-
-        for file in sorted(category_path.glob("*.py")):
-            if file.name == "__init__.py":
-                continue
-
-            extension = ".".join(file.with_suffix("").parts)
-
-            try:
-                await bot.load_extension(extension)
-
-                loaded.append(extension)
-                print(f"Loaded: {extension}")
-
-            except Exception as e:
-                failed.append(extension)
-
-                print(f"Failed to load: {extension}")
-                print(f"Reason: {e}")
-
-    print(f"Startup extensions loaded: {len(loaded)}")
-
-    if failed:
-        print(f"Startup extensions failed: {len(failed)}")
 
 async def main():
     try:
@@ -406,7 +230,6 @@ async def main():
             print("Supabase is unavailable. Starting with local asqlite storage.")
 
         await cogs()
-        await bot.load_extension('jishaku')
         await bot.start(TOKEN)
     finally:
         await sqlite.close()
