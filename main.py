@@ -15,6 +15,7 @@ import jishaku
 from pathlib import Path
 
 from utils.extensions import ExtensionManager
+from utils.commandsync import sync_commands
 
 bot = commands.Bot(
     command_prefix=commands.when_mentioned_or(config.PREFIX), 
@@ -36,6 +37,8 @@ extension_manager = ExtensionManager(bot, sqlite)
 bot.remove_command('help')
 bot.launch_time = datetime.now(timezone.utc)
 recent_cog = None
+commands_synced = False
+sync_lock = asyncio.Lock()
 
 """
 The following functions below are meant to simple run the bot, and load all the extensions.
@@ -99,12 +102,18 @@ async def manage_extension(ctx, action: str, extension: str):
     if action == 'unload':
         targets = list(reversed(targets))
     results = []
+    changed = False
     for target in targets:
         try:
             await extension_manager.apply(action, target)
+            changed = True
             results.append(f'{emotes.Check} `{target}`: {action} successful.')
         except Exception as exc:
             results.append(f'{emotes.Cross} `{target}`: {exc}')
+    if changed:
+        failed = await sync_all_commands()
+        results.append('Slash commands synced.' if not failed else
+                       'Some slash commands could not sync. Check the console or retry with sync.')
     if not results:
         results = ['No matching extensions found.']
     text = '\n'.join(results)
@@ -202,6 +211,10 @@ Printing out status and versions upon start, notifying the owner the program is 
 """
 @bot.event
 async def on_ready():
+    global commands_synced
+    if not commands_synced:
+        commands_synced = True
+        await sync_all_commands()
     
     print(f'Total cogs loaded: {len(bot.cogs)}')
     print(f'Total commands loaded: {len(bot.commands)}')
@@ -209,6 +222,28 @@ async def on_ready():
     print(f'Status: {bot.user} is online, {datetime.now()}.')
     print(f"discord.py API version: {discord.__version__}")
     print(f"Python version: {platform.python_version()}")
+
+async def sync_all_commands():
+    failed = 0
+    async with sync_lock:
+        for guild in bot.guilds:
+            try:
+                synced = await sync_commands(bot, guild)
+                print(f'Synced {len(synced)} slash commands for guild {guild.id}.')
+            except Exception as exc:
+                failed += 1
+                print(f'Failed to sync slash commands for guild {guild.id}: {exc}')
+    return failed
+
+
+@bot.event
+async def on_guild_join(guild):
+    async with sync_lock:
+        try:
+            await sync_commands(bot, guild)
+        except Exception as exc:
+            print(f'Failed to sync slash commands for guild {guild.id}: {exc}')
+
 
 async def cogs():
     """Restore only extensions explicitly enabled through the owner commands."""

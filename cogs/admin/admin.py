@@ -3,6 +3,7 @@ from discord.ext import commands
 
 import config
 import utils.emotes as emotes
+from utils.commandsync import sync_commands
 
 class Admin(commands.Cog):
     """
@@ -79,10 +80,8 @@ class Admin(commands.Cog):
         """
         Syncs slash commands for the current guild (instant update).
         """
-        tree = self.bot.tree
         guild = ctx.guild
-        tree.copy_global_to(guild=guild)
-        synced = await tree.sync(guild=guild)
+        synced = await sync_commands(self.bot, guild)
         await ctx.send(f"🔄 Locally synced {len(synced)} commands for guild `{guild.name}`.")
 
     @commands.command(name="localremove")
