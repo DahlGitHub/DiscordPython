@@ -4,6 +4,20 @@ CREATE TABLE IF NOT EXISTS league_patches (
     last_patch_url TEXT
 );
 
+CREATE TABLE IF NOT EXISTS steam_promo_channels (
+    guild_id INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    channel_id INTEGER NOT NULL,
+    PRIMARY KEY (guild_id, kind)
+);
+CREATE TABLE IF NOT EXISTS steam_promo_posts (
+    guild_id INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    app_id INTEGER NOT NULL,
+    offer_end INTEGER NOT NULL,
+    PRIMARY KEY (guild_id, kind, app_id, offer_end)
+);
+
 CREATE TABLE IF NOT EXISTS embedfix_rules (
     name TEXT PRIMARY KEY,
     source TEXT NOT NULL UNIQUE,

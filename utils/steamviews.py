@@ -1,11 +1,66 @@
 """Discord presentation for Steam wishlist pages and alerts."""
 
 import asyncio
+from urllib.parse import urljoin
 import aiohttp
 import discord
 import config
 from utils.paginator import ButtonPaginator
 from utils.steam import SteamError, price_label
+
+
+def promotion_card(item, end, free_to_keep, country):
+    """One Steam offer per embed, with two-column metadata and header artwork."""
+    kind = 'Free Game' if free_to_keep else 'Free Weekend'
+    app_id = item['appid']
+    embed = discord.Embed(
+        title=f"{kind}: {item['name']}"[:256],
+        url=f'https://store.steampowered.com/app/{app_id}/',
+        color=0x1B92B5,
+    )
+    # Use a raster Steam logo so Discord can render the thumbnail.
+    embed.set_thumbnail(url='https://store.cloudflare.steamstatic.com/public/shared/images/responsive/steam_share_image.jpg')
+    options = list(item.get('purchase_options', []))
+    options += [item.get('best_purchase_option') or {}, item.get('self_purchase_option') or {}]
+    option = next((o for o in options if o.get('is_free_to_keep') and
+                   o.get('free_to_keep_ends') == end), {}) if free_to_keep else (
+                       item.get('best_purchase_option') or item.get('self_purchase_option') or {})
+    original = option.get('formatted_original_price')
+    price = (f'~~{original}~~ FREE' if original else 'FREE') if free_to_keep else (
+        option.get('formatted_final_price') or 'Price unavailable')
+    release = item.get('release') or {}
+    released = release.get('steam_release_date') or release.get('original_steam_release_date')
+    if free_to_keep:
+        embed.add_field(name='Price', value=price)
+        embed.add_field(name='Release Date', value=f'<t:{released}:D>' if released else 'Not announced')
+    else:
+        embed.add_field(name='Free until', value=f'<t:{end}:F>')
+        embed.add_field(name='Price', value=price)
+    embed.add_field(name='\u200b', value='\u200b', inline=True)
+    reviews = (item.get('reviews') or {}).get('summary_unfiltered') or {}
+    count = reviews.get('review_count')
+    percent = reviews.get('percent_positive')
+    review_text = reviews.get('review_score_label') or 'Reviews unavailable'
+    if count is not None and percent is not None:
+        review_text += f' ({percent}% of {count:,} are positive)'
+    platforms = item.get('platforms') or {}
+    supported = [label for key, label in (('windows', 'Windows'), ('mac', 'Mac'),
+                                         ('steamos_linux', 'Linux')) if platforms.get(key)]
+    embed.add_field(name='All Reviews', value=review_text[:1024])
+    embed.add_field(name='Supported Platforms', value=', '.join(supported) or 'Not specified')
+    embed.add_field(name='\u200b', value='\u200b', inline=True)
+    if free_to_keep:
+        embed.add_field(name='Claim before', value=f'<t:{end}:F>', inline=False)
+    assets = item.get('assets') or {}
+    filename = assets.get('header')
+    template = assets.get('asset_url_format', '')
+    artwork = template.replace('${FILENAME}', filename).replace('${APPID}', str(app_id)) if filename and template else (
+        f'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/{app_id}/header.jpg')
+    # StoreBrowse returns paths such as steam/apps/570/header.jpg, not full URLs.
+    artwork = urljoin('https://shared.fastly.steamstatic.com/store_item_assets/', artwork)
+    embed.set_image(url=artwork)
+    embed.set_footer(text=f'Steam | {country} | ' + ('Free to keep' if free_to_keep else 'Temporary free access'))
+    return embed
 
 
 class WishlistPaginator(ButtonPaginator):
