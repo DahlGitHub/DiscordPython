@@ -96,12 +96,12 @@ class Steam(
 
     @app_commands.command(name="users", description="List registered Steam users")
     async def users(self, interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
         rows = await self.bot.sqlite.fetch(
             "SELECT user_id, steam_id FROM steam_users WHERE guild_id = ?", interaction.guild.id
         )
         if not rows:
-            await interaction.followup.send("No Steam users registered yet.", ephemeral=True)
+            await interaction.followup.send("No Steam users registered yet.")
             return
         lines = [
             f"<@{row['user_id']}> — [Steam profile](https://steamcommunity.com/profiles/{row['steam_id']}/)"
@@ -117,7 +117,7 @@ class Steam(
         ]
         await ButtonPaginator(pages, author_id=interaction.user.id).start(
             interaction, allowed_mentions=discord.AllowedMentions.none()
-        , ephemeral=True)
+        )
 
 
     @app_commands.command(
@@ -127,7 +127,7 @@ class Steam(
     @app_commands.checks.cooldown(1, 30, key=lambda i: (i.guild_id, i.user.id))
     async def wishlist(self, interaction: discord.Interaction, member: discord.Member = None):
         """View a registered member's live public wishlist."""
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
         member = member or interaction.user
         row = await self.bot.sqlite.fetchrow(
             "SELECT steam_id FROM steam_users WHERE guild_id = ? AND user_id = ?",
@@ -137,16 +137,16 @@ class Steam(
         if row is None:
             await interaction.followup.send(
                 "That member has no registered Steam profile. Use `/steam add <profile>`."
-            , ephemeral=True)
+            )
             return
         client = self.client()
         app_ids = await client.wishlist(row["steam_id"])
         if not app_ids:
-            await interaction.followup.send("Steam returned an empty wishlist.", ephemeral=True)
+            await interaction.followup.send("Steam returned an empty wishlist.")
             return
         paginator = WishlistPaginator(app_ids, member, row["steam_id"], client)
         paginator.author_id = interaction.user.id
-        await paginator.start(interaction, allowed_mentions=discord.AllowedMentions.none(), ephemeral=True)
+        await paginator.start(interaction, allowed_mentions=discord.AllowedMentions.none())
 
 
     @app_commands.command(name="status", description="Show Steam settings and scheduled checks")
