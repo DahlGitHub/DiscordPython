@@ -42,7 +42,7 @@ class SteamPromotions(commands.Cog):
             if not rows:
                 return 0, 0
             client = SteamClient(self.session, config.STEAM_API_KEY, config.STEAM_COUNTRY)
-            items = await promotion_items(client)
+            items = await promotion_items(client, kind=kind)
             offers = (free_games if kind == 'freegames' else free_weekend_games)(items)
             posted = 0
             failed = 0

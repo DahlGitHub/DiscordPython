@@ -1,4 +1,4 @@
-"""Manual Steam promotion discovery and conservative offer classification."""
+"""Find Steam promotions and check which offers are still active."""
 
 import json
 import time
@@ -14,7 +14,7 @@ def free_weekend_games(items, now=None):
 
 
 def free_games(items, now=None):
-    """Require explicit keep entitlement AND evidence of a nonzero normal price."""
+    """Only include paid games that Steam says are temporarily free to keep."""
     now = int(time.time()) if now is None else now
     found = []
     for item in items:
@@ -34,16 +34,26 @@ def free_games(items, now=None):
     return found
 
 
-async def promotion_items(client, app_id=None):
-    """Inspect a specific app or a bounded sample of Steam's public search results."""
+async def promotion_items(client, app_id=None, *, kind='freegames'):
+    """Search Steam's API, then fetch each game's offer details.
+
+    Steam ignored a minimum discount of 100 in live checks, so use 99 and
+    check for a free-to-keep offer separately. For weekends, search the
+    global top 1,000 sellers.
+    """
     ids = {app_id} if app_id else set()
     if not app_id:
-        for price_filters in ({'min_discount_percent': 1}, {'only_free_items': True}):
+        filters = {'type_filters': {'include_games': True}}
+        if kind == 'freegames':
+            filters['price_filters'] = {'min_discount_percent': 99}
+        elif kind == 'freeweekends':
+            filters['global_top_n_sellers'] = 1000
+        else:
+            raise ValueError('Unknown promotion kind')
+        start = 0
+        while True:
             params = {'input_json': json.dumps({
-                'query': {'start': 0, 'count': 100, 'filters': {
-                    'type_filters': {'include_apps': True, 'include_games': True},
-                    'price_filters': price_filters,
-                }},
+                'query': {'start': start, 'count': 100, 'sort': 1, 'filters': filters},
                 'context': {'country_code': client.country.upper(), 'language': 'english'},
             })}
             if client.key:
@@ -51,10 +61,22 @@ async def promotion_items(client, app_id=None):
             data = await client.request(
                 'https://api.steampowered.com/IStoreQueryService/Query/v1/', **params
             )
-            candidates = data.get('response', {}).get('ids')
-            if not isinstance(candidates, list):
-                raise SteamError('Steam promotion query returned an unexpected response.')
+            response = data.get('response', {})
+            candidates = response.get('ids')
+            metadata = response.get('metadata', {})
+            total = metadata.get('total_matching_records')
+            # Steam may leave out the game list when there are no matches.
+            if candidates is None and total == 0:
+                break
+            if (not isinstance(candidates, list) or not isinstance(total, int)
+                    or total < 0 or metadata.get('start') != start):
+                raise SteamError('Steam returned an invalid promotion list. Please try again.')
+            if not candidates and start < total:
+                raise SteamError('Steam did not return all search results. Please try again.')
             ids.update(item['appid'] for item in candidates if item.get('appid'))
+            start += len(candidates)
+            if start >= total:
+                break
     items = []
     ordered = sorted(ids)
     for start in range(0, len(ordered), 50):
