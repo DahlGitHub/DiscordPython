@@ -298,14 +298,15 @@ class Steam(
                 posted, failed = await tracker.check(kind, interaction.guild.id)
             except (SteamError, aiohttp.ClientError, asyncio.TimeoutError) as exc:
                 log.warning('Manual Steam %s check failed (%s)', kind, type(exc).__name__)
-                lines.append(f'{label}: Steam lookup failed; try again later.')
+                lines.append(f'{label}: Could not check Steam. Please try again later.')
                 continue
             lines.append(
                 f"{label}: {posted} new offers posted in <#{channel['channel_id']}>. "
-                + ('Delivery failed; check channel access and permissions.' if failed else
-                   'No new unposted offers found.' if not posted else 'Previously posted offers are skipped.')
+                + ('Could not post some offers. Check my channel permissions.' if failed else
+                   'No new offers found.' if not posted else 'Already shared offers are skipped.')
             )
-        lines.append('Discovery samples up to 100 sale and 100 free search results; some offers may be missed.')
+        if 'freeweekends' in kinds:
+            lines.append("Weekend checks cover Steam's top 1,000 sellers, so some offers may be missed.")
         await interaction.followup.send('\n'.join(lines), ephemeral=True)
 
     @app_commands.command(name='promocheck', description='Check free games and free weekends now')
