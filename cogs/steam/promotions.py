@@ -76,7 +76,8 @@ class SteamPromotions(commands.Cog):
 
     async def scheduled_check(self, kind):
         try:
-            await self.check(kind)
+            posted, failed = await self.check(kind)
+            log.info('Steam %s check complete: %s posted, %s delivery failures', kind, posted, failed)
         except Exception as exc:
             log.error('Steam %s check failed (%s); retrying next scheduled check', kind, type(exc).__name__)
 
@@ -90,9 +91,13 @@ class SteamPromotions(commands.Cog):
             await self.scheduled_check('freeweekends')
 
     @free_checker.before_loop
-    @weekend_checker.before_loop
     async def before_checks(self):
         await self.bot.wait_until_ready()
+
+    @weekend_checker.before_loop
+    async def before_weekend_checks(self):
+        await self.bot.wait_until_ready()
+        await self.scheduled_check('freeweekends')
 
 
 async def setup(bot):
