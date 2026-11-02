@@ -12,8 +12,7 @@ from discord.ext import commands
 import config
 from utils.paginator import ButtonPaginator
 from utils.steam import SteamClient, SteamError
-from utils.steamviews import WishlistPaginator, promotion_card
-from utils.steampromos import promotion_items, free_weekend_games, free_games
+from utils.steamviews import WishlistPaginator
 
 log = logging.getLogger(__name__)
 
@@ -265,7 +264,7 @@ class Steam(
             'INSERT INTO steam_promo_channels VALUES (?, ?, ?) ON CONFLICT(guild_id, kind) DO UPDATE SET channel_id = excluded.channel_id',
             interaction.guild.id, kind, channel.id,
         )
-        await interaction.followup.send(f'{kind} posts enabled in {channel.mention}.', ephemeral=True)
+        await interaction.followup.send(f'{kind} posts enabled in {channel.mention}. Use `/steam promocheck` to check now.', ephemeral=True)
 
     @app_commands.command(name='promodisable', description='Disable one type of automatic Steam promotion posts')
     @app_commands.checks.has_permissions(manage_guild=True)
@@ -280,56 +279,52 @@ class Steam(
         )
         await interaction.followup.send(f'Automatic {kind} posts disabled.', ephemeral=True)
 
-    async def show_promotions(self, interaction, classifier, title, app_id):
+    async def show_promotions(self, interaction, kinds):
         await interaction.response.defer(ephemeral=True)
-        if app_id is None:
-            tracker = self.bot.get_cog('SteamPromotions')
-            if tracker is None:
-                raise SteamError('Load cogs.steam.promotions to enable promotion checks.')
-            kind = 'freegames' if classifier is free_games else 'freeweekends'
+        tracker = self.bot.get_cog('SteamPromotions')
+        if tracker is None:
+            raise SteamError('Load cogs.steam.promotions to enable promotion checks.')
+        lines = []
+        for kind in kinds:
+            label = 'Free games' if kind == 'freegames' else 'Free weekends'
             channel = await self.bot.sqlite.fetchrow(
                 'SELECT channel_id FROM steam_promo_channels WHERE guild_id = ? AND kind = ?',
                 interaction.guild.id, kind,
             )
             if channel is None:
-                raise SteamError('Choose a destination first using /steam promochannel.')
-            posted, failed = await tracker.check(kind, interaction.guild.id)
-            await interaction.followup.send(
-                f"Check complete: {posted} new offers posted in <#{channel['channel_id']}>. "
+                lines.append(f'{label}: disabled. Choose a destination using `/steam promochannel`.')
+                continue
+            try:
+                posted, failed = await tracker.check(kind, interaction.guild.id)
+            except (SteamError, aiohttp.ClientError, asyncio.TimeoutError) as exc:
+                log.warning('Manual Steam %s check failed (%s)', kind, type(exc).__name__)
+                lines.append(f'{label}: Steam lookup failed; try again later.')
+                continue
+            lines.append(
+                f"{label}: {posted} new offers posted in <#{channel['channel_id']}>. "
                 + ('Delivery failed; check channel access and permissions.' if failed else
-                   'Previously posted offers are skipped. Search samples up to 100 sale and 100 free results.'),
-                ephemeral=True
+                   'No new unposted offers found.' if not posted else 'Previously posted offers are skipped.')
             )
-            return
-        items = await promotion_items(self.client(), app_id)
-        offers = classifier(items)
-        scope = (f'App {app_id}' if app_id else
-                 'Sample of up to 100 sale and 100 free search results; not a complete catalog scan')
-        if not offers:
-            await interaction.followup.send(f'No qualifying offers found. {scope}.', ephemeral=True)
-            return
-        for item, end in offers:
-            await interaction.channel.send(
-                embed=promotion_card(item, end, classifier is free_games, config.STEAM_COUNTRY),
-                allowed_mentions=discord.AllowedMentions.none(),
-            )
-        await interaction.followup.send(
-            f'Posted {len(offers)} game cards in this channel. {scope}.', ephemeral=True
-        )
+        lines.append('Discovery samples up to 100 sale and 100 free search results; some offers may be missed.')
+        await interaction.followup.send('\n'.join(lines), ephemeral=True)
 
-    @app_commands.command(name='freeweekends', description='Post free weekends to the configured channel, or test an app here')
-    @app_commands.describe(app_id='Optional Steam app ID to inspect instead of searching')
+    @app_commands.command(name='promocheck', description='Check free games and free weekends now')
     @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.guild_id)
-    async def freeweekends(self, interaction: discord.Interaction, app_id: app_commands.Range[int, 1] = None):
-        await self.show_promotions(interaction, free_weekend_games, 'Free weekends - temporary access', app_id)
+    async def promocheck(self, interaction: discord.Interaction):
+        await self.show_promotions(interaction, ('freegames', 'freeweekends'))
 
-    @app_commands.command(name='freegames', description='Post free-to-keep offers to the configured channel, or test an app here')
-    @app_commands.describe(app_id='Optional Steam app ID to inspect instead of searching')
+    @app_commands.command(name='freeweekends', description='Check free weekends now and post new offers to the configured channel')
     @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.guild_id)
-    async def freegames(self, interaction: discord.Interaction, app_id: app_commands.Range[int, 1] = None):
-        await self.show_promotions(interaction, free_games, 'Formerly paid games - free to keep', app_id)
+    async def freeweekends(self, interaction: discord.Interaction):
+        await self.show_promotions(interaction, ('freeweekends',))
+
+    @app_commands.command(name='freegames', description='Check free-to-keep games now and post new offers to the configured channel')
+    @app_commands.checks.has_permissions(manage_guild=True)
+    @app_commands.checks.cooldown(1, 60, key=lambda i: i.guild_id)
+    async def freegames(self, interaction: discord.Interaction):
+        await self.show_promotions(interaction, ('freegames',))
 
 
     async def cog_app_command_error(self, interaction: discord.Interaction, error):
