@@ -4,6 +4,7 @@ from discord.ext import commands
 import config
 import utils.emotes as emotes
 from utils.commandsync import sync_commands
+from utils.presence import save_presence
 
 class Admin(commands.Cog):
     """
@@ -36,23 +37,15 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.is_owner()
-    async def setstatus(self, ctx, activity_type: str, *, message: str):
-        
-        activity_type = activity_type.lower()
-
-        activity_map = {
-            "playing": discord.ActivityType.playing,
-            "watching": discord.ActivityType.watching,
-            "listening": discord.ActivityType.listening,
-            "streaming": discord.ActivityType.streaming
-        }
-
-        if activity_type not in activity_map:
-            return await ctx.send("Need an activity type.")
-        
-        activity = discord.Activity(type=activity_map[activity_type], name=message)
-        await self.bot.change_presence(activity=activity)
-        await ctx.send(f"✅ Status set to: {activity_type.title()} {message}")
+    @commands.max_concurrency(1, wait=True)
+    async def setstatus(self, ctx, activity_type: str, *, message: str = ''):
+        """Set a persistent activity or online status; use clear to remove activity."""
+        try:
+            await save_presence(self.bot, activity_type, message)
+        except ValueError as exc:
+            await ctx.send(str(exc))
+            return
+        await ctx.send('Status saved. It will stay until you update it.', allowed_mentions=discord.AllowedMentions.none())
 
     @commands.command(hidden=True)
     @commands.is_owner()

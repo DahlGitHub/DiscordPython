@@ -15,6 +15,7 @@ from pathlib import Path
 
 from utils.extensions import ExtensionManager
 from utils.commandsync import sync_commands
+from utils.presence import restore_presence
 
 bot = commands.Bot(
     command_prefix=commands.when_mentioned_or(config.PREFIX), 
@@ -209,6 +210,7 @@ Printing out status and versions upon start, notifying the owner the program is 
 @bot.event
 async def on_ready():
     global commands_synced
+    await restore_presence(bot)
     if not commands_synced:
         commands_synced = True
         await sync_all_commands()

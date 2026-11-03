@@ -121,3 +121,11 @@ CREATE TABLE IF NOT EXISTS canvas_subscriptions (
     channel_id INTEGER NOT NULL,
     PRIMARY KEY (user_id, course_id)
 );
+
+CREATE TABLE IF NOT EXISTS bot_presence (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    status TEXT NOT NULL DEFAULT 'online',
+    activity_type TEXT,
+    message TEXT NOT NULL DEFAULT '',
+    url TEXT
+);
