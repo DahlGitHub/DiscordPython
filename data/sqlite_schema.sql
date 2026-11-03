@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS enabled_extensions (
     extension TEXT PRIMARY KEY
 );
 
+DELETE FROM enabled_extensions WHERE extension = 'cogs.utils.reminder';
+
 CREATE TABLE IF NOT EXISTS steam_promo_channels (
     guild_id INTEGER NOT NULL,
     kind TEXT NOT NULL,
