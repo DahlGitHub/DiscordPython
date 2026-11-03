@@ -9,6 +9,8 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv('discord_token')
 PREFIX = os.getenv('discord_prefix')
 
+CURSEFORGE_API_KEY = (os.getenv('CURSEFORGE_API_KEY') or os.getenv('curseforge_api_key') or '').strip()
+
 # Steam: used for resolving custom Steam profile URLs.
 STEAM_API_KEY = os.getenv('steam_api_key') or os.getenv('STEAM_API_KEY')
 STEAM_COUNTRY = (os.getenv('steam_country') or 'NO').strip().upper() or 'NO'
