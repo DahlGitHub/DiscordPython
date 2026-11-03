@@ -13,12 +13,10 @@ class Sql(commands.Cog):
     @commands.command(hidden=True)
     @commands.is_owner()
     async def sqltables(self, ctx):
-        tables = await self.bot.db.fetch("""
-            SELECT table_name
-            FROM information_schema.tables
-            WHERE table_schema = 'public'
-                AND table_type = 'BASE TABLE'
-            ORDER BY table_name;
+        tables = await self.bot.sqlite.fetch("""
+            SELECT name AS table_name FROM sqlite_master
+            WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+            ORDER BY name;
         """)
         table_names = [row['table_name'] for row in tables]
         if not table_names:
@@ -35,7 +33,7 @@ class Sql(commands.Cog):
         Run a SQL Query
         """
         try:
-            rows = await self.bot.db.fetch(query)
+            rows = await self.bot.sqlite.fetch(query)
             if not rows:
                 await ctx.send("Query ran but no results")
                 return

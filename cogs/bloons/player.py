@@ -34,14 +34,14 @@ class Player(commands.Cog):
     @staticmethod
     async def get_bloons_key(db, user: discord.User) -> Tuple[bool, Union[dict, str]]:
         row = await db.fetchrow(
-            "SELECT key, timestamp FROM bloons_key WHERE user_id = $1", user.id
+            "SELECT key, timestamp FROM bloons_key WHERE user_id = ?1", user.id
         )
         if not row:
             return (
                 False, f"No BTD6 key found for {user.mention}."
             )
 
-        key, timestamp = row["key"], row["timestamp"]
+        key, timestamp = row["key"], datetime.fromisoformat(row["timestamp"])
         if timestamp.tzinfo is None:
             timestamp = timestamp.replace(tzinfo=timezone.utc)
 

@@ -12,7 +12,7 @@ class SubscribeCanvas(commands.Cog):
 
     @staticmethod
     async def get_canvas_key(db, user: discord.User) -> EmbedResult:
-        row = await db.fetchrow("SELECT key FROM canvas_key WHERE user_id = $1", user.id)
+        row = await db.fetchrow("SELECT key FROM canvas_key WHERE user_id = ?1", user.id)
         if not row:
             return (
                 EmbedBuilder(description=f"No Canvas key found for {user.mention}. Use `/canvas key` to set it."),
@@ -55,7 +55,7 @@ class SubscribeCanvas(commands.Cog):
 
         courses = [c for c in courses if c.get("enrollment_term_id") == current_term]
 
-        rows = await db.fetch("SELECT course_id, channel_id FROM canvas_subscriptions WHERE user_id = $1", user.id)
+        rows = await db.fetch("SELECT course_id, channel_id FROM canvas_subscriptions WHERE user_id = ?1", user.id)
         subs_lookup = {row["course_id"]: row["channel_id"] for row in rows}
 
         embed = EmbedBuilder().author(name=f"{user.name}'s Canvas Courses", icon="canvas")
@@ -83,12 +83,12 @@ class SubscribeCanvas(commands.Cog):
     async def get_assignments(db, user: discord.User):
         from datetime import datetime
 
-        row = await db.fetchrow("SELECT key FROM canvas_key WHERE user_id = $1", user.id)
+        row = await db.fetchrow("SELECT key FROM canvas_key WHERE user_id = ?1", user.id)
         if not row:
             return ([EmbedBuilder(description=f"No Canvas key found for {user.mention}. Use `/canvas key` to set it.")], True)
         key = row["key"]
 
-        subs = await db.fetch("SELECT course_id FROM canvas_subscriptions WHERE user_id = $1", user.id)
+        subs = await db.fetch("SELECT course_id FROM canvas_subscriptions WHERE user_id = ?1", user.id)
         if not subs:
             return ([EmbedBuilder(description="You’re not subscribed to any courses. Use `/canvas subscribe` first.")], True)
 
@@ -159,8 +159,8 @@ class SubscribeCanvas(commands.Cog):
         await db.execute(
             """
             INSERT INTO canvas_subscriptions (user_id, course_id, channel_id)
-            VALUES ($1, $2, $3)
-            ON CONFLICT (user_id, course_id) DO UPDATE SET channel_id = $3
+            VALUES (?1, ?2, ?3)
+            ON CONFLICT (user_id, course_id) DO UPDATE SET channel_id = ?3
             """,
             user.id, int(course_id), channel.id
         )
@@ -170,7 +170,7 @@ class SubscribeCanvas(commands.Cog):
     @staticmethod
     async def unsubscribe_from_course(db, user: discord.User, course_id: str):
         await db.execute(
-            "DELETE FROM canvas_subscriptions WHERE user_id = $1 AND course_id = $2",
+            "DELETE FROM canvas_subscriptions WHERE user_id = ?1 AND course_id = ?2",
             user.id, int(course_id)
         )
         return EmbedBuilder(description=f"✅ Unsubscribed from course #{course_id}."), False

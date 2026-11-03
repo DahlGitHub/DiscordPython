@@ -36,10 +36,10 @@ class Canvas(commands.GroupCog, name="canvas"):
     @commands.is_owner()
     @commands.command(name="term")
     async def term(self, ctx, term_id: int):
-        await self.bot.db.execute(
+        await self.bot.sqlite.execute(
             """
             INSERT INTO canvas_term (id, term_id)
-            VALUES (1, $1)
+            VALUES (1, ?1)
             ON CONFLICT (id) DO UPDATE
             SET term_id = EXCLUDED.term_id
             """,
@@ -49,10 +49,10 @@ class Canvas(commands.GroupCog, name="canvas"):
 
     @app_commands.command(name="key", description="Set your Canvas API key")
     async def key(self, interaction: discord.Interaction, key: str):
-        await self.bot.db.execute(
+        await self.bot.sqlite.execute(
             """
             INSERT INTO canvas_key (user_id, key)
-            VALUES ($1, $2)
+            VALUES (?1, ?2)
             ON CONFLICT (user_id) DO UPDATE
             SET key = EXCLUDED.key
             """,
@@ -63,12 +63,12 @@ class Canvas(commands.GroupCog, name="canvas"):
 
     @app_commands.command(name="courses", description="See your Canvas courses")
     async def courses(self, interaction: discord.Interaction):
-        embed, ephemeral = await SubscribeCanvas.get_courses(self.bot.db, interaction.user)
+        embed, ephemeral = await SubscribeCanvas.get_courses(self.bot.sqlite, interaction.user)
         await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
     @app_commands.command(name="assignments", description="Get an overview of your assignments for subscribed courses")
     async def assignments(self, interaction: discord.Interaction):
-        pages, ephemeral = await SubscribeCanvas.get_assignments(self.bot.db, interaction.user)
+        pages, ephemeral = await SubscribeCanvas.get_assignments(self.bot.sqlite, interaction.user)
 
         if not pages:
             return await interaction.response.send_message("No assignments found.", ephemeral=True)
@@ -82,17 +82,17 @@ class Canvas(commands.GroupCog, name="canvas"):
     @app_commands.command(name="subscribe", description="Subscribe to a Canvas course")
     @app_commands.describe(course_id="The ID of the course to subscribe to", channel="The channel to receive updates in")
     async def subscribe(self, interaction: discord.Interaction, course_id: str, channel: discord.TextChannel):
-        embed, error = await SubscribeCanvas.subscribe_to_course(self.bot.db, interaction.user, course_id, channel)
+        embed, error = await SubscribeCanvas.subscribe_to_course(self.bot.sqlite, interaction.user, course_id, channel)
         await interaction.response.send_message(embed=embed, ephemeral=(error is not None))
 
     @app_commands.command(name="unsubscribe", description="Unsubscribe from a Canvas course")
     @app_commands.describe(course_id="The ID of the course to unsubscribe from")
     async def unsubscribe(self, interaction: discord.Interaction, course_id: str):
-        embed, error = await SubscribeCanvas.unsubscribe_from_course(self.bot.db, interaction.user, course_id)
+        embed, error = await SubscribeCanvas.unsubscribe_from_course(self.bot.sqlite, interaction.user, course_id)
         await interaction.response.send_message(embed=embed, ephemeral=(error is not None))
 
     async def course_autocomplete(self, interaction: discord.Interaction, current: str):
-        courses = await SubscribeCanvas.fetch_raw_courses(self.bot.db, interaction.user)
+        courses = await SubscribeCanvas.fetch_raw_courses(self.bot.sqlite, interaction.user)
         if not courses:
             return []
         return [
@@ -235,15 +235,15 @@ class Canvas(commands.GroupCog, name="canvas"):
             print("🔄 check_updates tick")
             new_last_checked = self.last_checked
 
-            rows = await self.bot.db.fetch("SELECT user_id, course_id, channel_id FROM canvas_subscriptions")
+            rows = await self.bot.sqlite.fetch("SELECT user_id, course_id, channel_id FROM canvas_subscriptions")
             for row in rows:
                 user_id, course_id, channel_id = row["user_id"], row["course_id"], row["channel_id"]
 
-                key = await self.bot.db.fetchval("SELECT key FROM canvas_key WHERE user_id = $1", user_id)
+                key = await self.bot.sqlite.fetchval("SELECT key FROM canvas_key WHERE user_id = ?1", user_id)
                 if not key:
                     continue
 
-                courses = await SubscribeCanvas.fetch_raw_courses(self.bot.db, discord.Object(user_id))
+                courses = await SubscribeCanvas.fetch_raw_courses(self.bot.sqlite, discord.Object(user_id))
                 course_lookup = {int(c["id"]): c.get("name", "Unknown Course") for c in (courses or [])}
                 course_name = course_lookup.get(course_id, f"Course {course_id}")
 
@@ -269,7 +269,7 @@ class Canvas(commands.GroupCog, name="canvas"):
     async def check_reminders(self):
         try:
             now = datetime.now(timezone.utc)
-            rows = await self.bot.db.fetch("SELECT course_id, channel_id FROM canvas_subscriptions")
+            rows = await self.bot.sqlite.fetch("SELECT course_id, channel_id FROM canvas_subscriptions")
             for row in rows:
                 course_id, channel_id = row["course_id"], row["channel_id"]
 

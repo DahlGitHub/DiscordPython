@@ -9,9 +9,6 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv('discord_token')
 PREFIX = os.getenv('discord_prefix')
 
-# Database
-DATABASE_URL = os.getenv('database_url')
-
 # Steam: used for resolving custom Steam profile URLs.
 STEAM_API_KEY = os.getenv('steam_api_key') or os.getenv('STEAM_API_KEY')
 STEAM_COUNTRY = (os.getenv('steam_country') or 'NO').strip().upper() or 'NO'

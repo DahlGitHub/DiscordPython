@@ -31,20 +31,11 @@ def load_legacy_state() -> dict:
     }
 
 
-async def load_state(db, old_db=None) -> dict:
+async def load_state(db) -> dict:
     row = await db.fetchrow("SELECT channel_id, last_patch_url FROM league_patches WHERE id = 1")
     if row is None:
         # Import the old file once; subsequent reads use the database only.
-        state = None
-        # Preserve state from the short-lived PostgreSQL version, if present.
-        if old_db is not None and old_db.pool is not None:
-            exists = await old_db.fetchval("SELECT to_regclass('public.league_patches')")
-            if exists:
-                state = await old_db.fetchrow(
-                    "SELECT channel_id, last_patch_url FROM league_patches WHERE id = 1"
-                )
-        if state is None:
-            state = load_legacy_state()
+        state = load_legacy_state()
         await db.execute(
             "INSERT INTO league_patches (id, channel_id, last_patch_url) "
             "VALUES (1, ?, ?) ON CONFLICT (id) DO NOTHING",
@@ -166,7 +157,7 @@ class Patches(commands.Cog, name="Patches"):
             await ctx.send("❌ This must be a text channel.")
             return
 
-        await load_state(self.bot.sqlite, self.bot.db)
+        await load_state(self.bot.sqlite)
         await self.bot.sqlite.execute(
             "UPDATE league_patches SET channel_id = ? WHERE id = 1",
             channel.id,
@@ -183,7 +174,7 @@ class Patches(commands.Cog, name="Patches"):
 
     @patches.command(name="channel")
     async def patches_channel(self, ctx: commands.Context):
-        state = await load_state(self.bot.sqlite, self.bot.db)
+        state = await load_state(self.bot.sqlite)
 
         channel_id = state.get("channel_id")
 
@@ -218,7 +209,7 @@ class Patches(commands.Cog, name="Patches"):
         Check for new patch notes every 24 hours.
         """
 
-        state = await load_state(self.bot.sqlite, self.bot.db)
+        state = await load_state(self.bot.sqlite)
 
         channel_id = state.get("channel_id")
 

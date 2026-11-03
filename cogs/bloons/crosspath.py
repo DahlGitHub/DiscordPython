@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import discord
 from discord.ext import commands
 from utils.constraints import MONKEYS, MONKEY_IMAGES
@@ -13,7 +13,7 @@ class Crosspath(commands.Cog):
         row = await db.fetchrow("""
             SELECT top, mid, bot, last_modified_by, last_modified_at
             FROM crosspaths
-            WHERE monkey = $1
+            WHERE monkey = ?1
         """, monkey_key)
 
         if row:
@@ -24,7 +24,7 @@ class Crosspath(commands.Cog):
                     "bot": row["bot"].split() if row["bot"] else [],
                 },
                 "last_modified_by": row["last_modified_by"],
-                "last_modified_at": row["last_modified_at"].isoformat() if row["last_modified_at"] else None,
+                "last_modified_at": row["last_modified_at"],
             }
 
         return {
@@ -118,7 +118,7 @@ class Crosspath(commands.Cog):
 
         await db.execute("""
             INSERT INTO crosspaths (monkey, top, mid, bot, last_modified_by, last_modified_at)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6)
             ON CONFLICT (monkey) DO UPDATE SET
                 top = EXCLUDED.top,
                 mid = EXCLUDED.mid,
@@ -126,7 +126,7 @@ class Crosspath(commands.Cog):
                 last_modified_by = EXCLUDED.last_modified_by,
                 last_modified_at = EXCLUDED.last_modified_at
         """, monkey_key, paths["top"], paths["mid"], paths["bot"],
-            user.display_name, datetime.utcnow())
+            user.display_name, datetime.now(timezone.utc).isoformat())
         
         embed = EmbedBuilder(description=f"✅ Updated crosspaths for **{monkey_key.title()}")
 

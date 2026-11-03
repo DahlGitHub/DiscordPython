@@ -9,7 +9,6 @@ from discord.ext import commands
 from datetime import datetime, timezone
 import config
 import utils.emotes as emotes
-from data.database import Database
 from data.asqlite import SQLite
 import jishaku
 from pathlib import Path
@@ -28,8 +27,6 @@ TOKEN = config.DISCORD_TOKEN
 jishaku.Flags.NO_UNDERSCORE = True
 jishaku.Flags.NO_DM_TRACEBACK = True
 
-db = Database()
-bot.db = db
 sqlite = SQLite()
 bot.sqlite = sqlite
 extension_manager = ExtensionManager(bot, sqlite)
@@ -258,17 +255,10 @@ async def cogs():
 async def main():
     try:
         await sqlite.connect()
-        try:
-            await db.connect()
-        except Exception:
-            await db.close()
-            print("Supabase is unavailable. Starting with local asqlite storage.")
-
         await cogs()
         await bot.start(TOKEN)
     finally:
         await sqlite.close()
-        await db.close()
 
 if __name__ == "__main__":
     try:

@@ -138,7 +138,7 @@ class RiotAccount(commands.GroupCog, name="riotaccount", description="RiotAccoun
         """
         try:
             query = f"SELECT * FROM {table}"
-            response = await self.bot.db.fetch(query)
+            response = await self.bot.sqlite.fetch(query)
             if response:
                 embed = discord.Embed(
                     description=f"✅ Fetched data from `{table}` database:\n{response}",
@@ -194,8 +194,8 @@ class RiotAccount(commands.GroupCog, name="riotaccount", description="RiotAccoun
             puuid = data['puuid']
             # print(f"Fetching account information for {username}#{tag}... puuid:{puuid}")
 
-            dbquery = "SELECT puuid FROM riot_accounts WHERE username = $1 AND tag = $2"
-            dbresult = await self.bot.db.fetchrow(dbquery, username.lower(), tag.lower())
+            dbquery = "SELECT puuid FROM riot_accounts WHERE username = ?1 AND tag = ?2"
+            dbresult = await self.bot.sqlite.fetchrow(dbquery, username.lower(), tag.lower())
 
             if dbresult:
                 puuid = dbresult['puuid']
@@ -261,8 +261,8 @@ class RiotAccount(commands.GroupCog, name="riotaccount", description="RiotAccoun
 
             print("Starting db insertion for account information...")
             try:
-                dbquery = "INSERT INTO riot_accounts (username, tag, puuid, region) VALUES ($1, $2, $3, $4) ON CONFLICT (puuid) DO UPDATE SET username = $1, tag = $2, puuid = $3, last_updated = NOW()"
-                dbresponse = await self.bot.db.execute(dbquery, username.lower(), tag.lower(), puuid, "euw")
+                dbquery = "INSERT INTO riot_accounts (username, tag, puuid, region) VALUES (?1, ?2, ?3, ?4) ON CONFLICT (puuid) DO UPDATE SET username = ?1, tag = ?2, puuid = ?3, last_updated = CURRENT_TIMESTAMP"
+                dbresponse = await self.bot.sqlite.execute(dbquery, username.lower(), tag.lower(), puuid, "euw")
                 if dbresponse:
                     print(f"Database response: {dbresponse}")
 

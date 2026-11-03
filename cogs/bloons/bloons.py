@@ -25,7 +25,7 @@ class Bloons(commands.GroupCog, name="bloons"):
         interaction: discord.Interaction, 
         monkey: app_commands.Choice[str]
     ):
-        embed, ephemeral = await Crosspath.from_monkey(self.bot.db, monkey)
+        embed, ephemeral = await Crosspath.from_monkey(self.bot.sqlite, monkey)
         await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
     @app_commands.command(name="editcrosspath", description="Edit the crosspaths for a monkey")
@@ -39,7 +39,7 @@ class Bloons(commands.GroupCog, name="bloons"):
         mid: str = None,
         bot: str = None,
     ):
-        embed, ephemeral = await Crosspath.update_record(self.bot.db, monkey.value.lower(), interaction.user, top, mid, bot)
+        embed, ephemeral = await Crosspath.update_record(self.bot.sqlite, monkey.value.lower(), interaction.user, top, mid, bot)
         await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
     """
@@ -102,8 +102,8 @@ class Bloons(commands.GroupCog, name="bloons"):
         interaction: discord.Interaction, 
         bloons_key: str
     ):
-        await self.bot.db.execute(
-            "INSERT INTO bloons_key (user_id, key) VALUES ($1, $2)",
+        await self.bot.sqlite.execute(
+            "INSERT INTO bloons_key (user_id, key) VALUES (?1, ?2)",
             interaction.user.id,
             bloons_key,
         )
@@ -113,31 +113,31 @@ class Bloons(commands.GroupCog, name="bloons"):
     @player_api.command(name="stats", description="Get BTD6 player stats")
     async def player(self, interaction: discord.Interaction, user: discord.User | None = None):
         target = user or interaction.user
-        embed, ephemeral = await Player.bloons_stats(self.bot.db, target)
+        embed, ephemeral = await Player.bloons_stats(self.bot.sqlite, target)
         await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
     @player_api.command(name="popped", description="Get BTD6 popped stats")
     async def popped(self, interaction: discord.Interaction, user: discord.User | None = None):
         target = user or interaction.user
-        embed, ephemeral = await Player.bloons_popped(self.bot.db, target)
+        embed, ephemeral = await Player.bloons_popped(self.bot.sqlite, target)
         await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
     @player_api.command(name="monkeys", description="Get the number of monkeys placed by a user")
     async def monkeys(self, interaction: discord.Interaction, user: discord.User | None = None):
         target = user or interaction.user
-        embed, ephemeral = await Player.bloons_towers(self.bot.db, target)
+        embed, ephemeral = await Player.bloons_towers(self.bot.sqlite, target)
         await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
     @player_api.command(name="heroes", description="Get the number of heroes placed by a user")
     async def heroes(self, interaction: discord.Interaction, user: discord.User | None = None):
         target = user or interaction.user
-        embed, ephemeral = await Player.bloons_heroes(self.bot.db, target)
+        embed, ephemeral = await Player.bloons_heroes(self.bot.sqlite, target)
         await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
     @player_api.command(name="medals", description="Get the number of medals by a user")
     async def medals(self, interaction: discord.Interaction, user: discord.User | None = None):
         target = user or interaction.user
-        embed, ephemeral = await Player.bloons_medals(self.bot.db, target)
+        embed, ephemeral = await Player.bloons_medals(self.bot.sqlite, target)
         await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
 async def setup(bot: commands.Bot):

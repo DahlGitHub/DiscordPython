@@ -5,7 +5,7 @@ import asqlite
 
 
 class SQLite:
-    """Local storage for new features; bot.db remains PostgreSQL."""
+    """Shared local storage for all bot features."""
 
     def __init__(self, path="data/database.db"):
         self.path = Path(path)
@@ -42,3 +42,7 @@ class SQLite:
             async with self.connection.cursor() as cursor:
                 await cursor.execute(query, args)
                 return await cursor.fetchone()
+
+    async def fetchval(self, query, *args):
+        row = await self.fetchrow(query, *args)
+        return row[0] if row is not None else None

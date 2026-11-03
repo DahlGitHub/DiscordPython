@@ -57,3 +57,67 @@ CREATE TABLE IF NOT EXISTS steam_games (
     state TEXT NOT NULL,
     PRIMARY KEY (guild_id, app_id)
 );
+
+CREATE TABLE IF NOT EXISTS test_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key TEXT UNIQUE NOT NULL,
+    value TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS riot_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    puuid TEXT UNIQUE NOT NULL,
+    username TEXT NOT NULL,
+    tag TEXT NOT NULL,
+    region TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS bloons_favorite (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id BIGINT NOT NULL,
+    monkey_name TEXT NOT NULL,
+    path1 INTEGER NOT NULL,
+    path2 INTEGER NOT NULL,
+    path3 INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS bloons_key (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id BIGINT NOT NULL,
+    key TEXT NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS todo (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id BIGINT NOT NULL,
+    message TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS crosspaths (
+    monkey TEXT PRIMARY KEY,
+    top TEXT,
+    mid TEXT,
+    bot TEXT,
+    last_modified_by TEXT,
+    last_modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS canvas_term (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    term_id INTEGER NOT NULL
+);
+
+
+CREATE TABLE IF NOT EXISTS canvas_key (
+    user_id INTEGER PRIMARY KEY,
+    key TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS canvas_subscriptions (
+    user_id INTEGER NOT NULL,
+    course_id INTEGER NOT NULL,
+    channel_id INTEGER NOT NULL,
+    PRIMARY KEY (user_id, course_id)
+);
