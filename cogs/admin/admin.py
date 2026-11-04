@@ -1,4 +1,6 @@
 import discord
+from datetime import datetime, timezone
+import humanize
 from discord.ext import commands
 
 import config
@@ -12,6 +14,47 @@ class Admin(commands.Cog):
     """
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def status(self, ctx):
+        """Show basic bot health and background check schedules."""
+        embed = discord.Embed(title='Bot status', color=config.Color_Default)
+        uptime = datetime.now(timezone.utc) - self.bot.launch_time
+        embed.add_field(name='Uptime', value=humanize.precisedelta(uptime))
+        embed.add_field(name='Latency', value=f'{self.bot.latency * 1000:.0f} ms')
+        embed.add_field(name='Extensions', value=str(len(self.bot.extensions)))
+        try:
+            await self.bot.sqlite.fetchval('SELECT 1')
+        except Exception:
+            database = 'Unavailable'
+        else:
+            database = 'Connected'
+        embed.add_field(name='Database', value=database)
+
+        checks = []
+        for cog_name, loop_name, label in (
+            ('SteamNotifications', 'watcher', 'Steam wishlists'),
+            ('SteamPromotions', 'free_checker', 'Steam free games'),
+            ('SteamPromotions', 'weekend_checker', 'Steam free weekends'),
+            ('Patches', 'patch_checker', 'League patches'),
+        ):
+            cog = self.bot.get_cog(cog_name)
+            if cog is None:
+                state = 'Not loaded'
+            else:
+                loop = getattr(cog, loop_name)
+                if loop.failed():
+                    state = 'Failed'
+                elif loop.is_running():
+                    state = 'Running'
+                    if loop.next_iteration:
+                        state += f' (next {discord.utils.format_dt(loop.next_iteration, "R")})'
+                else:
+                    state = 'Stopped'
+            checks.append(f'**{label}:** {state}')
+        embed.add_field(name='Background checks', value='\n'.join(checks), inline=False)
+        await ctx.send(embed=embed)
 
     @commands.command(hidden=True)
     @commands.is_owner()
