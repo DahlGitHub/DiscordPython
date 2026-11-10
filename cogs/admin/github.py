@@ -3,11 +3,16 @@ import sys
 from pathlib import Path
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 
 BOT_DIR = Path("/home/pi/DiscordPython")
 VENV_PYTHON = BOT_DIR / "venv" / "bin" / "python"
+
+
+async def is_bot_owner(interaction: discord.Interaction) -> bool:
+    return await interaction.client.is_owner(interaction.user)
 
 
 class GitHub(commands.Cog):
@@ -36,22 +41,13 @@ class GitHub(commands.Cog):
 
         return process.returncode, output
 
-    @commands.command(name="pull", hidden=True)
-    @commands.is_owner()
-    @commands.cooldown(
-        1,
-        30,
-        commands.BucketType.user
-    )
-    async def pull(self, ctx):
-        """
-        Pull the latest version from GitHub
-        and restart the bot.
-        """
-
-        message = await ctx.send(
-            "Checking GitHub..."
-        )
+    @app_commands.command(name="pull", description="Pull the latest bot code and restart (owner only)")
+    @app_commands.checks.cooldown(1, 30, key=lambda interaction: interaction.user.id)
+    @app_commands.check(is_bot_owner)
+    async def pull(self, interaction: discord.Interaction):
+        """Pull the latest version from GitHub and restart the bot."""
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        await interaction.edit_original_response(content="Checking GitHub...")
 
         code, status = await self.run_command(
             "git",
@@ -60,7 +56,7 @@ class GitHub(commands.Cog):
         )
 
         if code != 0:
-            await message.edit(
+            await interaction.edit_original_response(
                 content=(
                     "Could not check Git status.\n"
                     f"```text\n{status[-1500:]}\n```"
@@ -69,7 +65,7 @@ class GitHub(commands.Cog):
             return
 
         if status:
-            await message.edit(
+            await interaction.edit_original_response(
                 content=(
                     "Update cancelled because the Pi "
                     "has local changes:\n"
@@ -86,7 +82,7 @@ class GitHub(commands.Cog):
         )
 
         if code != 0:
-            await message.edit(
+            await interaction.edit_original_response(
                 content=(
                     "Could not determine current commit.\n"
                     f"```text\n{before[-1500:]}\n```"
@@ -94,7 +90,7 @@ class GitHub(commands.Cog):
             )
             return
 
-        await message.edit(
+        await interaction.edit_original_response(
             content="Pulling latest changes..."
         )
 
@@ -107,7 +103,7 @@ class GitHub(commands.Cog):
         )
 
         if code != 0:
-            await message.edit(
+            await interaction.edit_original_response(
                 content=(
                     "Git pull failed.\n"
                     f"```text\n{pull_output[-1500:]}\n```"
@@ -123,7 +119,7 @@ class GitHub(commands.Cog):
         )
 
         if code != 0:
-            await message.edit(
+            await interaction.edit_original_response(
                 content=(
                     "Could not determine new commit.\n"
                     f"```text\n{after[-1500:]}\n```"
@@ -132,7 +128,7 @@ class GitHub(commands.Cog):
             return
 
         if before == after:
-            await message.edit(
+            await interaction.edit_original_response(
                 content="Already up to date."
             )
             return
@@ -141,7 +137,7 @@ class GitHub(commands.Cog):
 
         if requirements.exists():
 
-            await message.edit(
+            await interaction.edit_original_response(
                 content=(
                     f"`{before}` → `{after}`\n"
                     "Checking dependencies..."
@@ -158,7 +154,7 @@ class GitHub(commands.Cog):
             )
 
             if code != 0:
-                await message.edit(
+                await interaction.edit_original_response(
                     content=(
                         "Code was updated, but dependency "
                         "installation failed.\n\n"
@@ -201,7 +197,7 @@ class GitHub(commands.Cog):
             inline=False
         )
 
-        await message.edit(
+        await interaction.edit_original_response(
             content=None,
             embed=embed
         )
