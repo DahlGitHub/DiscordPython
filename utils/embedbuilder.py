@@ -1,5 +1,6 @@
 import discord
 from datetime import datetime, timezone
+from typing_extensions import Self
 import config  # assumes your color & emoji constants are here
 from .icons import ICONS
 
@@ -57,11 +58,15 @@ class EmbedBuilder:
     def color(self, value):
         self.embed.color = value
 
-    def set_description(self, value):
+    def set_title(self, value: str | None) -> Self:
+        self.title = value
+        return self
+
+    def set_description(self, value: str | None) -> Self:
         self.description = value
         return self
 
-    def set_color(self, value):
+    def set_color(self, value: int | discord.Color | None) -> Self:
         self.color = value
         return self
 
@@ -69,38 +74,41 @@ class EmbedBuilder:
         """Return the underlying embed, ready to send."""
         return self.embed
 
-    def _resolve_icon(self, icon_key):
+    def _resolve_icon(self, icon_key: str | discord.Asset | None) -> str | None:
+        if isinstance(icon_key, discord.Asset):
+            return str(icon_key)
         if isinstance(icon_key, str):
-            if icon_key.startswith("http://") or icon_key.startswith("https://"):
+            if icon_key.lower().startswith(("http://", "https://")):
                 return icon_key
             return ICONS.get(icon_key.lower())
         return None
 
-    def author(self, name=None, icon=None):
+    def author(self, name: str | None = None, icon: str | discord.Asset | None = None, *, url: str | None = None) -> Self:
+        """Set an author with an icon key, URL, or Discord asset, and optional link."""
         if name:
-            self.embed.set_author(name=name, icon_url=self._resolve_icon(icon))
+            self.embed.set_author(name=name, icon_url=self._resolve_icon(icon), url=url)
         return self
 
-    def footer(self, text=None, icon=None):
+    def footer(self, text: str | None = None, icon: str | discord.Asset | None = None) -> Self:
         if text:
             self.embed.set_footer(text=text, icon_url=self._resolve_icon(icon))
         return self
 
-    def image(self, url=None):
+    def image(self, url: str | discord.Asset | None = None) -> Self:
         if url:
             self.embed.set_image(url=url)
         return self
 
-    def thumbnail(self, url=None):
+    def thumbnail(self, url: str | discord.Asset | None = None) -> Self:
         if url:
             self.embed.set_thumbnail(url=url)
         return self
 
-    def timestamp(self, time=None):
+    def timestamp(self, time: datetime | None = None) -> Self:
         self.embed.timestamp = time or datetime.now(timezone.utc)
         return self
 
-    def field(self, name=None, value=None, inline=False):
+    def field(self, name=None, value=None, inline: bool = False) -> Self:
         if name and value is not None:
             self.embed.add_field(name=name, value=value, inline=inline)
         return self
