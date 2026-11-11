@@ -1,5 +1,5 @@
 import discord
-from datetime import datetime
+from datetime import datetime, timezone
 import config  # assumes your color & emoji constants are here
 from .icons import ICONS
 
@@ -19,13 +19,13 @@ class EmbedBuilder:
         .set_color(config.Color_Info)
         .build()
     """
-    def __init__(self, title = None, url = None, description: str = None, type='rich', color: int = config.Color_Default):
+    def __init__(self, title = None, url = None, description: str = None, type='rich', color: int | discord.Color | None = config.Color_Default):
         self.embed = discord.Embed(
             title=title,
             description=description,
             url=url,
             type=type,
-            color=discord.Color(color))
+            color=color)
 
     def __getattr__(self, attr):
         return getattr(self.embed, attr)
@@ -55,7 +55,19 @@ class EmbedBuilder:
 
     @color.setter
     def color(self, value):
-        self.embed.color = value if isinstance(value, discord.Color) else discord.Color(value)
+        self.embed.color = value
+
+    def set_description(self, value):
+        self.description = value
+        return self
+
+    def set_color(self, value):
+        self.color = value
+        return self
+
+    def build(self) -> discord.Embed:
+        """Return the underlying embed, ready to send."""
+        return self.embed
 
     def _resolve_icon(self, icon_key):
         if isinstance(icon_key, str):
@@ -85,10 +97,10 @@ class EmbedBuilder:
         return self
 
     def timestamp(self, time=None):
-        self.embed.timestamp = time or datetime.now()
+        self.embed.timestamp = time or datetime.now(timezone.utc)
         return self
 
     def field(self, name=None, value=None, inline=False):
-        if name and value:
+        if name and value is not None:
             self.embed.add_field(name=name, value=value, inline=inline)
         return self
